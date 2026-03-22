@@ -1,0 +1,4007 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Explorable Data Story</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;600;700&display=swap");
+
+      :root {
+        --ink: #14212b;
+        --bg: #f8f6f2;
+        --panel: #fffdf8;
+        --accent: #0072b2;
+        --accent-strong: #005f8f;
+        --accent-2: #009e73;
+        --accent-3: #e69f00;
+        --accent-soft: #d7ecf8;
+        --alert: #d55e00;
+        --line: #b7c7d3;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Manrope", "Trebuchet MS", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 10% 15%, #dff0fa 0%, transparent 34%),
+          radial-gradient(circle at 92% 8%, #ffe8c3 0%, transparent 24%),
+          linear-gradient(160deg, #f8f6f2 0%, #eef4fa 100%);
+      }
+
+      .grain {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(rgba(20, 33, 43, 0.04) 0.8px, transparent 0.8px);
+        background-size: 4px 4px;
+        opacity: 0.3;
+        z-index: -1;
+      }
+
+      main {
+        width: min(1180px, 94vw);
+        margin: 2rem auto 3rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      .hero {
+        border: 1px solid rgba(20, 33, 43, 0.13);
+        border-radius: 18px;
+        background: var(--panel);
+        box-shadow: 0 10px 25px rgba(20, 33, 43, 0.08);
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        min-height: clamp(320px, 62vh, 560px);
+        display: grid;
+        place-items: center;
+        padding: clamp(1.5rem, 3vw, 2.4rem);
+        background:
+          radial-gradient(circle at 20% 20%, rgba(86, 180, 233, 0.26) 0%, rgba(86, 180, 233, 0) 42%),
+          radial-gradient(circle at 85% 18%, rgba(230, 159, 0, 0.2) 0%, rgba(230, 159, 0, 0) 38%),
+          linear-gradient(165deg, #f8f6f2 0%, #eff5fb 100%);
+        animation: rise 500ms ease;
+      }
+
+      #heroParticles {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(to bottom, rgba(255, 253, 248, 0.06), rgba(255, 253, 248, 0.3));
+      }
+
+      .hero-content {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        max-width: 850px;
+      }
+
+      .hero-kicker {
+        margin: 0 0 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--accent-2);
+      }
+
+      h1 {
+        margin: 0;
+        font-family: "Fraunces", serif;
+        font-size: clamp(2.45rem, 7.2vw, 5.2rem);
+        letter-spacing: -0.02em;
+        line-height: 0.96;
+      }
+
+      .lead {
+        margin: 1rem auto 0;
+        font-size: clamp(1rem, 1.4vw, 1.2rem);
+        line-height: 1.5;
+        max-width: 64ch;
+        color: #26465c;
+      }
+
+      .act-title {
+        margin: 0 0 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: var(--accent-2);
+      }
+
+      .storyboard,
+      .formula-panel,
+      .lab-intro,
+      .panel,
+      .stats,
+      .insight {
+        border: 1px solid rgba(20, 33, 43, 0.13);
+        border-radius: 18px;
+        background: var(--panel);
+        box-shadow: 0 10px 25px rgba(20, 33, 43, 0.08);
+      }
+
+      .storyboard {
+        display: grid;
+        gap: 0.75rem;
+        padding: 1rem 1rem 1.1rem;
+      }
+
+      .storyboard h2 {
+        margin: 0;
+        font-family: "Fraunces", serif;
+        font-size: clamp(1.35rem, 2vw, 1.9rem);
+      }
+
+      .story-intro {
+        margin: 0.45rem 0 0.2rem;
+        line-height: 1.52;
+        color: #26465c;
+      }
+
+      .story-card {
+        position: relative;
+        border: 1px solid #d6e3ec;
+        border-radius: 14px;
+        padding: 0.9rem 1rem 0.95rem 1.15rem;
+        background: linear-gradient(165deg, #ffffff 0%, #f7fbff 100%);
+      }
+
+      .story-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 12px;
+        bottom: 12px;
+        width: 4px;
+        border-radius: 4px;
+        background: linear-gradient(180deg, #56b4e9 0%, #009e73 100%);
+      }
+
+      .story-tag {
+        margin: 0 0 0.55rem;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+        color: var(--accent-2);
+      }
+
+      .story-card h3 {
+        margin: 0;
+        font-family: "Fraunces", serif;
+        font-size: clamp(1.35rem, 2vw, 1.85rem);
+        line-height: 1.1;
+        font-weight: 600;
+      }
+
+      .story-card p {
+        margin: 0.7rem 0 0;
+        line-height: 1.56;
+        color: #24475f;
+      }
+
+      .mini-corr {
+        margin-top: 0.78rem;
+        border: 1px solid #cfe1ec;
+        border-radius: 12px;
+        padding: 0.58rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
+      }
+
+      .mini-corr-title {
+        margin: 0;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: #2f5f7b;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .mini-axis-line {
+        margin: 0.28rem 0 0;
+        text-align: center;
+        font-size: 0.76rem;
+        color: #446a80;
+      }
+
+      .mini-corr-controls {
+        margin-top: 0.36rem;
+        display: grid;
+        gap: 0.32rem;
+      }
+
+      .mini-corr-controls label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.83rem;
+        color: #315a74;
+        font-weight: 700;
+      }
+
+      #miniScrollVelocity {
+        width: 100%;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        height: 11px;
+        border-radius: 12px;
+        background: #cddde8;
+      }
+
+      #miniScrollVelocity::-webkit-slider-runnable-track {
+        height: 11px;
+        border-radius: 12px;
+        background: #cddde8;
+      }
+
+      #miniScrollVelocity::-moz-range-track {
+        height: 11px;
+        border-radius: 12px;
+        background: #cddde8;
+        border: 0;
+      }
+
+      #miniScrollVelocity::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        margin-top: -3.5px;
+        border-radius: 50%;
+        background: #0072b2;
+        border: 2px solid #f7fcff;
+        box-shadow: 0 1px 6px rgba(0, 114, 178, 0.32);
+        cursor: pointer;
+      }
+
+      #miniScrollVelocity::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #0072b2;
+        border: 2px solid #f7fcff;
+        box-shadow: 0 1px 6px rgba(0, 114, 178, 0.32);
+        cursor: pointer;
+      }
+
+      .mini-readout {
+        margin: 0;
+        font-size: 0.82rem;
+        color: #325a74;
+      }
+
+      #miniCorrSvg {
+        margin-top: 0.4rem;
+        width: 100%;
+        height: 210px;
+        border: 1px solid #d7e5ef;
+        border-radius: 9px;
+        background: #ffffff;
+        display: block;
+      }
+
+      .mini-corr-note {
+        margin: 0.38rem 0 0;
+        font-size: 0.74rem;
+        color: #456980;
+        text-align: center;
+      }
+
+      .mini-user-chart {
+        margin-top: 0.72rem;
+        border: 1px solid #cfe1ec;
+        border-radius: 12px;
+        padding: 0.58rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+        position: relative;
+      }
+
+      .mini-user-title {
+        margin: 0;
+        text-align: center;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: #2f5f7b;
+        font-weight: 800;
+      }
+
+      #miniUserSvg {
+        margin-top: 0.4rem;
+        width: 100%;
+        height: 200px;
+        border: 1px solid #d7e5ef;
+        border-radius: 9px;
+        background: #ffffff;
+        display: block;
+      }
+
+      .mini-user-legend {
+        margin: 0.34rem 0 0;
+        display: flex;
+        justify-content: center;
+        gap: 0.85rem;
+        font-size: 0.72rem;
+        color: #486c82;
+      }
+
+      .mini-user-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .mini-user-dot {
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 50%;
+        border: 1px solid rgba(20, 33, 43, 0.3);
+      }
+
+      .mini-user-dot.cat {
+        background: rgba(0, 158, 115, 0.72);
+      }
+
+      .mini-user-dot.nocat {
+        background: rgba(0, 114, 178, 0.66);
+      }
+
+      .mini-user-note {
+        margin: 0.38rem 0 0;
+        font-size: 0.74rem;
+        color: #456980;
+        text-align: center;
+      }
+
+      .mini-user-tooltip {
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform: translate(8px, 8px);
+        opacity: 0;
+        pointer-events: none;
+        border: 1px solid #d7e5ef;
+        border-radius: 9px;
+        background: #ffffff;
+        padding: 0.4rem 0.46rem;
+        font-size: 0.76rem;
+        line-height: 1.45;
+        color: #2e556d;
+        box-shadow: 0 8px 18px rgba(20, 33, 43, 0.16);
+        max-width: min(310px, 88%);
+        z-index: 4;
+      }
+
+      .pie-gag {
+        margin-top: 0.8rem;
+        border: 1px dashed #c8d9e5;
+        border-radius: 12px;
+        padding: 0.65rem;
+        background:
+          repeating-linear-gradient(
+            -45deg,
+            rgba(86, 180, 233, 0.07) 0 8px,
+            rgba(230, 159, 0, 0.07) 8px 16px
+          );
+      }
+
+      .pie-caption {
+        margin: 0;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #3a6075;
+        font-weight: 700;
+      }
+
+      .pie-note {
+        margin: 0.42rem 0 0;
+        text-align: center;
+        font-size: 0.86rem;
+        color: #3b6075;
+      }
+
+      .pie-layout {
+        margin-top: 0.45rem;
+        display: grid;
+        grid-template-columns: 230px 180px;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem 0.75rem;
+        width: fit-content;
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .pie-3d {
+        width: 210px;
+        height: 132px;
+        margin: 0 auto;
+        position: relative;
+        transform-style: preserve-3d;
+        transform: perspective(430px) rotateX(58deg) rotateZ(-13deg);
+      }
+
+      .pie-3d::before,
+      .pie-3d::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+      }
+
+      .pie-3d::before {
+        background:
+          conic-gradient(
+            #ff006e 0 20%,
+            #ffd166 20% 33%,
+            #06d6a0 33% 46%,
+            #118ab2 46% 62%,
+            #8338ec 62% 78%,
+            #fb5607 78% 91%,
+            #ffbe0b 91% 100%
+          );
+        box-shadow:
+          0 14px 18px rgba(20, 33, 43, 0.23),
+          0 0 0 2px rgba(255, 255, 255, 0.55) inset;
+      }
+
+      .pie-3d::after {
+        inset: 14px 0 -14px 0;
+        background:
+          conic-gradient(
+            #c10057 0 20%,
+            #d8a848 20% 33%,
+            #068a68 33% 46%,
+            #0d6582 46% 62%,
+            #5c2ca8 62% 78%,
+            #b33c00 78% 91%,
+            #ca950a 91% 100%
+          );
+        filter: brightness(0.85);
+        z-index: -1;
+      }
+
+      .pie-legend {
+        margin: 0;
+        padding: 0.2rem 0 0;
+        list-style: none;
+      }
+
+      .pie-legend li {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.76rem;
+        color: #355a70;
+        margin: 0 0 0.25rem;
+      }
+
+      .swatch {
+        width: 0.72rem;
+        height: 0.72rem;
+        border-radius: 2px;
+        border: 1px solid rgba(20, 33, 43, 0.22);
+        flex: 0 0 auto;
+      }
+
+      .swatch.rev {
+        background: #ff006e;
+      }
+      .swatch.ops {
+        background: #06d6a0;
+      }
+      .swatch.ux {
+        background: #118ab2;
+      }
+      .swatch.yellow-a {
+        background: #ffd166;
+      }
+      .swatch.yellow-b {
+        background: #ffbe0b;
+      }
+
+      .formula-panel {
+        padding: 1rem;
+      }
+
+      .formula-panel h2 {
+        margin: 0;
+        font-family: "Fraunces", serif;
+        font-size: clamp(1.35rem, 2vw, 1.9rem);
+      }
+
+      .formula-panel > p:not(.act-title) {
+        margin: 0.65rem 0 0.95rem;
+        color: #26465c;
+        line-height: 1.54;
+      }
+
+      .formula-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 0.7rem;
+      }
+
+      .act7-dict-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .formula {
+        border: 1px solid #d8e5ee;
+        border-radius: 12px;
+        padding: 0.75rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      }
+
+      .formula .name {
+        margin: 0;
+        font-size: 0.82rem;
+        color: #2f5a75;
+        font-weight: 700;
+      }
+
+      .eq {
+        display: block;
+        margin-top: 0.5rem;
+        padding: 0.58rem 0.65rem;
+        border-radius: 10px;
+        border: 1px solid #d9e7f0;
+        background: #ffffff;
+        color: #15354a;
+        text-align: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        max-width: 100%;
+      }
+
+      .eq .katex-display {
+        margin: 0.12em 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+
+      .eq .katex {
+        font-size: clamp(0.94em, 1.9vw, 1.06em);
+      }
+
+      .formula-scene {
+        margin-top: 0.25rem;
+        border-color: #d6e3ec;
+        background: linear-gradient(165deg, #ffffff 0%, #f7fbff 100%);
+      }
+
+      .formula-scene::before {
+        background: linear-gradient(180deg, #56b4e9 0%, #009e73 100%);
+      }
+
+      .dataset-layout {
+        margin-top: 0.72rem;
+        display: grid;
+        grid-template-columns: minmax(220px, 0.95fr) minmax(260px, 1.05fr);
+        gap: 0.72rem;
+        align-items: stretch;
+      }
+
+      .mini-table {
+        border: 1px solid #d8e5ee;
+        border-radius: 10px;
+        padding: 0.5rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+        align-self: stretch;
+      }
+
+      .mini-table-title {
+        margin: 0 0 0.42rem;
+        font-size: 0.73rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #2f5a75;
+        font-weight: 800;
+      }
+
+      .mini-table table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .mini-table-scroll {
+        flex: 1 1 auto;
+        height: 0;
+        min-height: 0;
+        overflow-y: auto;
+        border: 1px solid #d9e7f0;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .mini-table th,
+      .mini-table td {
+        border-bottom: 1px solid #e2ebf2;
+        padding: 0.3rem 0.18rem;
+        font-size: 0.78rem;
+        text-align: center;
+      }
+
+      .mini-table th {
+        color: #355a70;
+        font-weight: 700;
+        position: sticky;
+        top: 0;
+        background: #f7fbff;
+        z-index: 1;
+      }
+
+      .mini-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .stat-three {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .stat-card {
+        border: 1px solid #d8e5ee;
+        border-radius: 10px;
+        padding: 0.52rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      }
+
+      .stat-card .name {
+        margin: 0;
+        color: #2f5a75;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+      }
+
+      .stat-card .eq {
+        margin-top: 0.35rem;
+      }
+
+      .stat-value {
+        margin: 0.4rem 0 0;
+        font-size: 0.76rem;
+        color: #355a70;
+      }
+
+      .stat-note {
+        margin: 0.36rem 0 0;
+        font-size: 0.72rem;
+        color: #4a6b7d;
+      }
+
+      .act2-bridge {
+        margin-top: 0.78rem;
+      }
+
+      .act2-bridge p {
+        margin: 0;
+        line-height: 1.55;
+        color: #274d64;
+      }
+
+      .act2-bridge p + p {
+        margin-top: 0.52rem;
+      }
+
+      .act2-focus-grid {
+        margin-top: 0.72rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.62rem;
+      }
+
+      .quantile-scene {
+        margin-top: 0.8rem;
+      }
+
+      .quantile-toolbar {
+        margin-top: 0.55rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 0.7rem;
+      }
+
+      .quantile-explain {
+        margin-top: 0.55rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.58rem;
+      }
+
+      .quantile-blurb {
+        border: 1px solid #d8e5ee;
+        border-radius: 10px;
+        padding: 0.5rem 0.58rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      }
+
+      .quantile-blurb .name {
+        margin: 0;
+        color: #2f5a75;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+      }
+
+      .quantile-blurb p {
+        margin: 0.36rem 0 0;
+        font-size: 0.78rem;
+        line-height: 1.45;
+        color: #2b546b;
+      }
+
+      .quantile-note {
+        margin: 0;
+        font-size: 0.74rem;
+        color: #3a6077;
+      }
+
+      #act2HeightHistSvg,
+      #act2SkewRightSvg,
+      #act2SkewLeftSvg,
+      #act2MultiPeakSvg {
+        margin-top: 0.62rem;
+        width: 100%;
+        height: 250px;
+        border: 1px solid #d7e5ef;
+        border-radius: 10px;
+        background: #ffffff;
+        display: block;
+      }
+
+      .skew-scene {
+        margin-top: 0.8rem;
+      }
+
+      .skew-stack {
+        margin-top: 0.62rem;
+        display: grid;
+        gap: 0.78rem;
+      }
+
+      .skew-chart {
+        border: 1px solid #d8e5ee;
+        border-radius: 12px;
+        padding: 0.55rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      }
+
+      .scene4-multi-chart {
+        margin-top: 0.6rem;
+      }
+
+      .skew-chart-title {
+        margin: 0;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: #2f5a75;
+        font-weight: 800;
+      }
+
+      .skew-meta {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 0.52rem;
+      }
+
+      .skew-order {
+        margin: 0.48rem 0 0;
+        font-size: 0.77rem;
+        color: #335f78;
+        text-align: center;
+      }
+
+      .quantile-hint {
+        margin: 0.45rem 0 0;
+        font-size: 0.74rem;
+        color: #3a6077;
+        text-align: center;
+      }
+
+      .quantile-meta {
+        margin-top: 0.66rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.58rem;
+      }
+
+      .quantile-chip {
+        border: 1px solid #d8e5ee;
+        border-radius: 10px;
+        padding: 0.5rem 0.55rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      }
+
+      .quantile-chip .name {
+        margin: 0;
+        color: #2f5a75;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+      }
+
+      .quantile-chip .value {
+        margin: 0.32rem 0 0;
+        font-size: 0.9rem;
+        color: #244f66;
+        font-weight: 700;
+      }
+
+      .mini-table-head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.45rem 0.6rem;
+        margin-bottom: 0.4rem;
+      }
+
+      #act2RefreshBtn,
+      #act2HeightRefreshBtn,
+      #act2SkewRefreshBtn,
+      #act2MultiRefreshBtn,
+      #act3ShuffleBtn,
+      #act3MatrixRefreshBtn,
+      #act3BoxRefreshBtn,
+      #act4NullSimBtn,
+      #act5ResampleBtn,
+      #act5SimBtn,
+      #act4RunTestBtn {
+        position: relative;
+        isolation: isolate;
+        overflow: visible;
+        border-radius: 999px;
+        border: 1px solid #bed4e3;
+        padding: 0.32rem 0.62rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        color: #2f5a75;
+        background: linear-gradient(180deg, #ffffff 0%, #f2f8fd 100%);
+        box-shadow:
+          0 1px 4px rgba(20, 33, 43, 0.08),
+          0 0 0 2px rgba(86, 180, 233, 0.14),
+          0 0 14px rgba(0, 158, 115, 0.18);
+      }
+
+      #act2RefreshBtn::before,
+      #act2RefreshBtn::after,
+      #act2HeightRefreshBtn::before,
+      #act2HeightRefreshBtn::after,
+      #act2SkewRefreshBtn::before,
+      #act2SkewRefreshBtn::after,
+      #act2MultiRefreshBtn::before,
+      #act2MultiRefreshBtn::after,
+      #act3ShuffleBtn::before,
+      #act3ShuffleBtn::after,
+      #act3MatrixRefreshBtn::before,
+      #act3MatrixRefreshBtn::after,
+      #act3BoxRefreshBtn::before,
+      #act3BoxRefreshBtn::after,
+      #act4NullSimBtn::before,
+      #act4NullSimBtn::after,
+      #act5ResampleBtn::before,
+      #act5ResampleBtn::after,
+      #act5SimBtn::before,
+      #act5SimBtn::after,
+      #act4RunTestBtn::before,
+      #act4RunTestBtn::after {
+        content: "";
+        position: absolute;
+        pointer-events: none;
+        border-radius: 999px;
+        z-index: -1;
+      }
+
+      #act2RefreshBtn::before,
+      #act2HeightRefreshBtn::before,
+      #act2SkewRefreshBtn::before,
+      #act2MultiRefreshBtn::before,
+      #act3ShuffleBtn::before,
+      #act3MatrixRefreshBtn::before,
+      #act3BoxRefreshBtn::before,
+      #act4NullSimBtn::before,
+      #act5ResampleBtn::before,
+      #act5SimBtn::before,
+      #act4RunTestBtn::before {
+        inset: -3px;
+        padding: 1.5px;
+        background: linear-gradient(
+          110deg,
+          rgba(86, 180, 233, 0) 0%,
+          rgba(86, 180, 233, 0) 34%,
+          rgba(86, 180, 233, 0.9) 47%,
+          rgba(0, 158, 115, 0.86) 54%,
+          rgba(0, 158, 115, 0) 68%,
+          rgba(0, 158, 115, 0) 100%
+        );
+        background-size: 230% 100%;
+        background-position: 130% 50%;
+        -webkit-mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        animation: act2Sweep 2.9s ease-in-out infinite;
+      }
+
+      #act2RefreshBtn::after,
+      #act2HeightRefreshBtn::after,
+      #act2SkewRefreshBtn::after,
+      #act2MultiRefreshBtn::after,
+      #act3ShuffleBtn::after,
+      #act3MatrixRefreshBtn::after,
+      #act3BoxRefreshBtn::after,
+      #act4NullSimBtn::after,
+      #act5ResampleBtn::after,
+      #act5SimBtn::after,
+      #act4RunTestBtn::after {
+        inset: -8px;
+        background: linear-gradient(
+          110deg,
+          rgba(86, 180, 233, 0) 4%,
+          rgba(86, 180, 233, 0.38) 48%,
+          rgba(0, 158, 115, 0.34) 55%,
+          rgba(0, 158, 115, 0) 86%
+        );
+        background-size: 220% 100%;
+        background-position: 120% 50%;
+        filter: blur(9px);
+        opacity: 0.28;
+        animation:
+          act2Sweep 3.2s ease-in-out infinite,
+          act2GlowPulse 2.2s ease-in-out infinite;
+      }
+
+      #act2RefreshBtn:hover,
+      #act2HeightRefreshBtn:hover,
+      #act2SkewRefreshBtn:hover,
+      #act2MultiRefreshBtn:hover,
+      #act3ShuffleBtn:hover,
+      #act3MatrixRefreshBtn:hover,
+      #act3BoxRefreshBtn:hover,
+      #act4NullSimBtn:hover,
+      #act5ResampleBtn:hover,
+      #act5SimBtn:hover,
+      #act4RunTestBtn:hover {
+        border-color: #98bdd7;
+        background: linear-gradient(180deg, #ffffff 0%, #eaf4fb 100%);
+        box-shadow:
+          0 2px 6px rgba(20, 33, 43, 0.11),
+          0 0 0 2px rgba(86, 180, 233, 0.2),
+          0 0 18px rgba(0, 158, 115, 0.24);
+      }
+
+      #act2RefreshBtn:hover::after,
+      #act2HeightRefreshBtn:hover::after,
+      #act2SkewRefreshBtn:hover::after,
+      #act2MultiRefreshBtn:hover::after,
+      #act3ShuffleBtn:hover::after,
+      #act3MatrixRefreshBtn:hover::after,
+      #act3BoxRefreshBtn:hover::after,
+      #act4NullSimBtn:hover::after,
+      #act5ResampleBtn:hover::after,
+      #act5SimBtn:hover::after,
+      #act4RunTestBtn:hover::after {
+        opacity: 0.48;
+      }
+
+      #act2RefreshBtn:focus-visible,
+      #act2HeightRefreshBtn:focus-visible,
+      #act2SkewRefreshBtn:focus-visible,
+      #act2MultiRefreshBtn:focus-visible,
+      #act3ShuffleBtn:focus-visible,
+      #act3MatrixRefreshBtn:focus-visible,
+      #act3BoxRefreshBtn:focus-visible,
+      #act4NullSimBtn:focus-visible,
+      #act5ResampleBtn:focus-visible,
+      #act5SimBtn:focus-visible,
+      #act4RunTestBtn:focus-visible {
+        outline: none;
+        border-color: #6ea9cb;
+        box-shadow:
+          0 2px 6px rgba(20, 33, 43, 0.12),
+          0 0 0 3px rgba(86, 180, 233, 0.28),
+          0 0 20px rgba(0, 158, 115, 0.28);
+      }
+
+      #act2RefreshBtn:focus-visible::after,
+      #act2HeightRefreshBtn:focus-visible::after,
+      #act2SkewRefreshBtn:focus-visible::after,
+      #act2MultiRefreshBtn:focus-visible::after,
+      #act3ShuffleBtn:focus-visible::after,
+      #act3MatrixRefreshBtn:focus-visible::after,
+      #act3BoxRefreshBtn:focus-visible::after,
+      #act4NullSimBtn:focus-visible::after,
+      #act5ResampleBtn:focus-visible::after,
+      #act5SimBtn:focus-visible::after,
+      #act4RunTestBtn:focus-visible::after {
+        opacity: 0.58;
+      }
+
+      #act2RefreshBtn:active,
+      #act2HeightRefreshBtn:active,
+      #act2SkewRefreshBtn:active,
+      #act2MultiRefreshBtn:active,
+      #act3ShuffleBtn:active,
+      #act3MatrixRefreshBtn:active,
+      #act3BoxRefreshBtn:active,
+      #act4NullSimBtn:active,
+      #act5ResampleBtn:active,
+      #act5SimBtn:active,
+      #act4RunTestBtn:active {
+        transform: translateY(1px);
+      }
+
+      .act3-controls {
+        margin-top: 0.6rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0.52rem 0.72rem;
+      }
+
+      .act3-select-wrap {
+        display: grid;
+        gap: 0.24rem;
+      }
+
+      .act3-select-wrap span {
+        font-size: 0.73rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #2f5a75;
+        font-weight: 800;
+      }
+
+      #act3DatasetSelect {
+        border: 1px solid #bed4e3;
+        border-radius: 9px;
+        padding: 0.36rem 0.55rem;
+        font: inherit;
+        font-size: 0.79rem;
+        color: #244f66;
+        background: linear-gradient(180deg, #ffffff 0%, #f2f8fd 100%);
+      }
+
+      #act3DatasetSelect:focus-visible {
+        outline: none;
+        border-color: #6ea9cb;
+        box-shadow: 0 0 0 3px rgba(86, 180, 233, 0.26);
+      }
+
+      .act3-status {
+        margin: 0.45rem 0 0;
+        font-size: 0.74rem;
+        color: #3a6077;
+      }
+
+      #act3DozenSvg {
+        margin-top: 0.62rem;
+        width: 100%;
+        height: 330px;
+        border: 1px solid #d7e5ef;
+        border-radius: 10px;
+        background: #ffffff;
+        display: block;
+      }
+
+      .act3-meta {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .act3-multiples-grid {
+        margin-top: 0.7rem;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.56rem;
+      }
+
+      .act3-mini-card {
+        border: 1px solid #d8e5ee;
+        border-radius: 10px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        padding: 0.42rem;
+      }
+
+      .act3-mini-name {
+        margin: 0;
+        color: #2f5a75;
+        font-size: 0.69rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .act3-mini-svg {
+        margin-top: 0.32rem;
+        width: 100%;
+        height: 120px;
+        display: block;
+        border: 1px solid #d7e5ef;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .act3-mini-note {
+        margin: 0.3rem 0 0;
+        text-align: center;
+        font-size: 0.68rem;
+        color: #3a6077;
+        font-weight: 700;
+      }
+
+      .act3-dino-focus {
+        margin-top: 0.7rem;
+        border: 1px solid #d8e5ee;
+        border-radius: 12px;
+        padding: 0.58rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(220px, 1fr);
+        gap: 0.62rem;
+      }
+
+      #act3DinoSvg {
+        width: 100%;
+        height: 220px;
+        display: block;
+        border: 1px solid #d7e5ef;
+        border-radius: 9px;
+        background: #ffffff;
+      }
+
+      .act3-dino-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.48rem;
+      }
+
+      .act3-dino-chip {
+        border: 1px solid #d8e5ee;
+        border-radius: 9px;
+        padding: 0.42rem 0.5rem;
+        background: #ffffff;
+      }
+
+      .act3-dino-chip .name {
+        margin: 0;
+        color: #2f5a75;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+      }
+
+      .act3-dino-chip .value {
+        margin: 0.28rem 0 0;
+        font-size: 0.82rem;
+        color: #244f66;
+        font-weight: 700;
+      }
+
+      .act3-split {
+        margin-top: 0.62rem;
+        display: grid;
+        grid-template-columns: minmax(300px, 1fr) minmax(0, 1.35fr);
+        gap: 0.66rem;
+      }
+
+      .act3-table-shell,
+      .act3-matrix-shell {
+        border: 1px solid #d8e5ee;
+        border-radius: 12px;
+        padding: 0.54rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      }
+
+      .act3-shell-title {
+        margin: 0;
+        color: #2f5a75;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 800;
+      }
+
+      .act3-hover-tip {
+        margin: 0.44rem 0 0;
+        padding: 0.42rem 0.5rem;
+        border: 1px solid #98bdd7;
+        border-radius: 9px;
+        background: linear-gradient(180deg, #eef7ff 0%, #e4f3ff 100%);
+        color: #1f4f6a;
+        font-size: 0.75rem;
+        font-weight: 800;
+        line-height: 1.4;
+      }
+
+      .act3-table-scroll {
+        margin-top: 0.42rem;
+        max-height: 500px;
+        overflow: auto;
+        border: 1px solid #d7e5ef;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .act3-table-scroll table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+        font-size: 0.72rem;
+      }
+
+      .act3-table-scroll thead {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      .act3-table-scroll th {
+        background: #edf5fb;
+        color: #2f5a75;
+        font-size: 0.69rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .act3-table-scroll th,
+      .act3-table-scroll td {
+        border-bottom: 1px solid #e3edf4;
+        border-right: 1px solid #e6eef5;
+        padding: 0.34rem 0.46rem;
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .act3-table-scroll td:first-child,
+      .act3-table-scroll th:first-child {
+        text-align: left;
+      }
+
+      .act3-table-scroll tbody tr {
+        cursor: pointer;
+      }
+
+      .act3-table-scroll tbody tr:hover {
+        background: #f2f8fd;
+      }
+
+      .act3-table-scroll tbody tr.is-selected {
+        background: #e4f2fd;
+        box-shadow: inset 3px 0 0 #0072b2;
+      }
+
+      .act3-pairplot-scroll {
+        margin-top: 0.42rem;
+        max-height: 500px;
+        overflow: auto;
+        border: 1px solid #d7e5ef;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      #act3PairplotSvg {
+        width: auto;
+        height: auto;
+        display: block;
+      }
+
+      .act3-box-split {
+        margin-top: 0.62rem;
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+        gap: 0.66rem;
+      }
+
+      .act3-box-copy,
+      .act3-box-shell {
+        border: 1px solid #d8e5ee;
+        border-radius: 12px;
+        padding: 0.58rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      }
+
+      .act3-box-copy p {
+        margin: 0.42rem 0 0;
+        font-size: 0.76rem;
+        line-height: 1.48;
+        color: #29526a;
+      }
+
+      .act3-box-copy .quantile-toolbar {
+        margin-top: 0.62rem;
+      }
+
+      #act3BoxplotSvg {
+        margin-top: 0.42rem;
+        width: 100%;
+        height: 235px;
+        display: block;
+        border: 1px solid #d7e5ef;
+        border-radius: 9px;
+        background: #ffffff;
+      }
+
+      .act3-box-legend {
+        margin-top: 0.58rem;
+        display: grid;
+        gap: 0.34rem;
+        font-size: 0.72rem;
+        color: #3a6077;
+      }
+
+      .act3-box-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+      }
+
+      .act3-box-swatch {
+        width: 0.68rem;
+        height: 0.68rem;
+        border-radius: 2px;
+        border: 1px solid rgba(20, 33, 43, 0.25);
+      }
+
+      .act3-box-swatch.box {
+        background: rgba(86, 180, 233, 0.34);
+      }
+
+      .act3-box-swatch.med {
+        background: rgba(213, 94, 0, 0.9);
+      }
+
+      .act3-box-swatch.out {
+        background: rgba(0, 114, 178, 0.72);
+      }
+
+      .act4-grid {
+        margin-top: 0.62rem;
+        display: grid;
+        grid-template-columns: minmax(270px, 1fr) minmax(0, 1.3fr);
+        gap: 0.66rem;
+      }
+
+      .act4-panel {
+        border: 1px solid #d8e5ee;
+        border-radius: 12px;
+        padding: 0.58rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      }
+
+      .act4-controls {
+        margin-top: 0.5rem;
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .act4-control label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #2f5a75;
+      }
+
+      .act4-control input[type="range"] {
+        width: 100%;
+      }
+
+      #act4CiSvg {
+        margin-top: 0.48rem;
+        width: 100%;
+        height: 230px;
+        border: 1px solid #d7e5ef;
+        border-radius: 9px;
+        background: #ffffff;
+        display: block;
+      }
+
+      #act4CiConceptSvg,
+      #act4ZConceptSvg,
+      #act4NullPSvg,
+      #act4PConceptSvg {
+        margin-top: 0.5rem;
+        width: 100%;
+        height: 210px;
+        border: 1px solid #d7e5ef;
+        border-radius: 9px;
+        background: #ffffff;
+        display: block;
+      }
+
+      .act4-meta {
+        margin-top: 0.56rem;
+      }
+
+      .act4-setup-meta {
+        margin-top: 0.52rem;
+      }
+
+      .act4-run-actions {
+        margin-top: 0.62rem;
+      }
+
+      .act4-run-actions .quantile-note {
+        flex: 1 1 100%;
+      }
+
+      .act4-aux-btn {
+        border: 1px solid #bed4e3;
+        background: #f7fbff;
+        color: #2f5a75;
+        font-size: 0.72rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 0.33rem 0.66rem;
+      }
+
+      .act4-aux-btn:hover {
+        border-color: #98bdd7;
+        background: #eef6fc;
+      }
+
+      .act4-history-block {
+        margin-top: 0.62rem;
+        border: 1px solid #d8e5ee;
+        border-radius: 11px;
+        padding: 0.5rem;
+        background: #ffffff;
+      }
+
+      #act4HistorySvg {
+        margin-top: 0.38rem;
+        width: 100%;
+        height: 190px;
+        border: 1px solid #d7e5ef;
+        border-radius: 9px;
+        background: #ffffff;
+        display: block;
+      }
+
+      .act4-history-meta {
+        margin-top: 0.5rem;
+      }
+
+      #act5AssumptionSvg {
+        margin-top: 0.56rem;
+        width: 100%;
+        height: 250px;
+        border: 1px solid #d7e5ef;
+        border-radius: 10px;
+        background: #ffffff;
+        display: block;
+      }
+
+      .act5-assumption-grid {
+        margin-top: 0.62rem;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.56rem;
+      }
+
+      .act5-assumption-card {
+        border: 1px solid #d8e5ee;
+        border-radius: 10px;
+        padding: 0.5rem 0.58rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      }
+
+      .act5-assumption-card .name {
+        margin: 0;
+        color: #2f5a75;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+      }
+
+      .act5-assumption-card p {
+        margin: 0.34rem 0 0;
+        font-size: 0.78rem;
+        line-height: 1.46;
+        color: #2b546b;
+      }
+
+      #act5DistSvg,
+      #act5QqSvg,
+      #act5QqFamilySvg,
+      #act5QqScenarioSvg,
+      #act6ScatterSvg,
+      #act6SlopeDistSvg,
+      #act6MomMleSvg,
+      #act7ZSvg,
+      #act7TSvg,
+      #act7PowerSvg,
+      #act7PSvg,
+      #act7SideSvg,
+      #act7MultSvg {
+        margin-top: 0.56rem;
+        width: 100%;
+        height: 240px;
+        border: 1px solid #d7e5ef;
+        border-radius: 10px;
+        background: #ffffff;
+        display: block;
+      }
+
+      #act6SlopeDistSvg {
+        height: 220px;
+      }
+
+      #act6MomMleSvg {
+        height: 220px;
+      }
+
+      #act7PowerSvg,
+      #act7PSvg,
+      #act7SideSvg,
+      #act7MultSvg {
+        height: 220px;
+      }
+
+      .act4-illus {
+        margin-top: 0.58rem;
+        border: 1px solid #d8e5ee;
+        border-radius: 11px;
+        padding: 0.52rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      }
+
+      .act4-illus svg {
+        width: 100%;
+        height: 165px;
+        display: block;
+        border: 1px solid #d7e5ef;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      #act4LiftDemoSvg {
+        height: 275px;
+      }
+
+      #act4ObservedGapSvg {
+        height: 275px;
+      }
+
+      .act4-key-eq {
+        margin-top: 0.5rem;
+        border: 1px solid #d8e5ee;
+        border-radius: 9px;
+        padding: 0.48rem 0.56rem;
+        background: #ffffff;
+        font-size: 0.82rem;
+        color: #244f66;
+        text-align: center;
+        font-weight: 700;
+      }
+
+      .act2-action-note {
+        margin: 0 0 0.42rem;
+        font-size: 0.74rem;
+        color: #3a6077;
+      }
+
+      .lab-intro {
+        padding: 0.95rem 1rem;
+      }
+
+      .lab-intro h2 {
+        margin: 0;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #2c5772;
+      }
+
+      .lab-intro p {
+        margin: 0.55rem 0 0;
+        line-height: 1.5;
+        color: #26465c;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
+        gap: 1rem;
+      }
+
+      .panel {
+        padding: 1rem;
+      }
+
+      .panel h2,
+      .viz h2,
+      .stats h2,
+      .insight h2 {
+        margin: 0 0 0.7rem;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #2c5772;
+      }
+
+      .control {
+        margin-bottom: 0.9rem;
+      }
+
+      .control label {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-bottom: 0.35rem;
+        font-size: 0.88rem;
+        font-weight: 600;
+      }
+
+      input[type="range"],
+      select {
+        width: 100%;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        height: 7px;
+        border-radius: 7px;
+        background: #d3e3ec;
+      }
+
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 7px;
+        border-radius: 7px;
+        background: #d3e3ec;
+      }
+
+      input[type="range"]::-moz-range-track {
+        height: 7px;
+        border-radius: 7px;
+        background: #d3e3ec;
+        border: 0;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        margin-top: -5.5px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid #f7fcff;
+        box-shadow: 0 2px 8px rgba(0, 114, 178, 0.35);
+        cursor: pointer;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid #f7fcff;
+        box-shadow: 0 2px 8px rgba(0, 114, 178, 0.35);
+        cursor: pointer;
+      }
+
+      select,
+      button {
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        padding: 0.48rem 0.62rem;
+        font: inherit;
+        color: inherit;
+        background: #fff;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+      }
+
+      button {
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      button:disabled,
+      select:disabled,
+      input:disabled {
+        cursor: not-allowed;
+        opacity: 0.72;
+      }
+
+      button.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent-strong);
+      }
+
+      .viz {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .plot-wrap {
+        border: 1px solid #d5e2eb;
+        border-radius: 14px;
+        background: #fffefb;
+        padding: 0.7rem;
+      }
+
+      .assessment-panel {
+        margin-top: 1.6rem;
+        padding: 1.35rem;
+        border: 1px solid #d7e5ef;
+        border-radius: 18px;
+        background:
+          radial-gradient(circle at top right, rgba(86, 180, 233, 0.11), transparent 34%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 251, 255, 0.98) 100%);
+        box-shadow: 0 18px 40px rgba(17, 52, 74, 0.08);
+      }
+
+      .assessment-panel h2 {
+        margin: 0;
+        font-family: "Fraunces", serif;
+        font-size: clamp(1.35rem, 2vw, 1.9rem);
+        line-height: 1.08;
+      }
+
+      .assessment-head {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.1rem;
+        margin-bottom: 0.72rem;
+      }
+
+      .assessment-head .act-title {
+        margin: 0;
+      }
+
+      .assessment-head h2 {
+        margin: 0 !important;
+        align-self: flex-start;
+      }
+
+      .assessment-intro {
+        margin: 0;
+        color: #24475f;
+        line-height: 1.6;
+      }
+
+      .assessment-toolbar {
+        margin-top: 1rem;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+      }
+
+      .assessment-actions {
+        display: flex;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+      }
+
+      .assessment-actions.end {
+        margin-top: 1rem;
+        justify-content: flex-end;
+      }
+
+      .assessment-summary {
+        min-height: 1.3rem;
+        color: #24475f;
+        font-size: 0.92rem;
+        line-height: 1.45;
+      }
+
+      .assessment-unlock-note {
+        margin: 0.9rem 0 0;
+        color: #2d566d;
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+
+      .assessment-grid {
+        margin-top: 1rem;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .assessment-card {
+        position: relative;
+        border: 1px solid #d7e3ea;
+        border-radius: 16px;
+        padding: 0.95rem 0.95rem 0.95rem 1.12rem;
+        background:
+          radial-gradient(circle at top right, rgba(86, 180, 233, 0.07), transparent 28%),
+          linear-gradient(165deg, #ffffff 0%, #f7fbff 100%);
+        box-shadow: 0 10px 22px rgba(19, 54, 76, 0.06);
+      }
+
+      .assessment-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 12px;
+        bottom: 12px;
+        width: 4px;
+        border-radius: 4px;
+        background: linear-gradient(180deg, #56b4e9 0%, #009e73 100%);
+      }
+
+      .assessment-card h3 {
+        margin: 0.12rem 0 0;
+        font-size: 1.16rem;
+      }
+
+      .assessment-card p {
+        margin: 0.6rem 0 0;
+        color: #24475f;
+        line-height: 1.56;
+      }
+
+      .assessment-goal {
+        font-size: 0.95rem;
+        min-height: 0;
+      }
+
+      .assessment-widget {
+        margin-top: 0.82rem;
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      .assessment-figure {
+        width: 100%;
+        height: auto;
+        display: block;
+        border: 1px solid #d5e3ec;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #ffffff 0%, #f5fbff 100%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      }
+
+      .assessment-figure-wide {
+        min-height: 260px;
+      }
+
+      .assessment-option-list {
+        display: grid;
+        gap: 0.72rem;
+      }
+
+      .assessment-option {
+        width: 100%;
+        text-align: left;
+        border: 1px solid #d5e3ec;
+        border-radius: 12px;
+        padding: 0.82rem 0.9rem;
+        background: #ffffff;
+        color: #24475f;
+        font: inherit;
+        line-height: 1.5;
+        cursor: pointer;
+        transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+      }
+
+      .assessment-option:hover {
+        border-color: #9dc6df;
+        box-shadow: 0 8px 18px rgba(19, 54, 76, 0.08);
+        transform: translateY(-1px);
+      }
+
+      .assessment-option.selected {
+        border-color: #0072b2;
+        box-shadow: 0 0 0 2px rgba(0, 114, 178, 0.12);
+        color: #143a52;
+      }
+
+      .assessment-widget .act4-control,
+      .assessment-widget .control {
+        margin: 0;
+      }
+
+      .assessment-readout {
+        margin-top: 0.72rem;
+        border: 1px solid #d7e5ef;
+        border-radius: 10px;
+        padding: 0.58rem 0.68rem;
+        background: rgba(255, 255, 255, 0.88);
+        font-size: 0.82rem;
+        color: #284b61;
+        line-height: 1.5;
+      }
+
+      .assessment-status {
+        min-height: 2.6rem;
+        margin-top: 0.62rem;
+        padding: 0.54rem 0.64rem;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        line-height: 1.45;
+        background: rgba(72, 102, 120, 0.08);
+        color: #355b72;
+      }
+
+      .assessment-status.correct {
+        background: rgba(0, 158, 115, 0.12);
+        color: #0f6a52;
+      }
+
+      .assessment-status.incorrect {
+        background: rgba(213, 94, 0, 0.12);
+        color: #8a4309;
+      }
+
+      .story-card,
+      .formula-scene,
+      .formula,
+      .mini-table,
+      .mini-corr,
+      .quantile-chip,
+      .act4-panel,
+      .assessment-card,
+      .assessment-readout {
+        background: #ffffff;
+      }
+
+      .assessment-panel {
+        background: #fffdf8;
+      }
+
+      .story-card::before,
+      .formula-scene::before,
+      .assessment-card::before {
+        background: #56b4e9;
+      }
+
+      .assessment-widget {
+        align-content: start;
+      }
+
+      .assessment-figure {
+        background: #f8fbff;
+        box-shadow: none;
+        overflow: hidden;
+      }
+
+      canvas {
+        width: 100%;
+        display: block;
+      }
+
+      #scatter {
+        height: 365px;
+      }
+
+      #hist {
+        height: 175px;
+      }
+
+      .stats {
+        padding: 1rem;
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.7rem;
+      }
+
+      .card {
+        border: 1px solid #d4e2eb;
+        border-radius: 12px;
+        padding: 0.65rem;
+        background: #fff;
+      }
+
+      .card .k {
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #3c6278;
+      }
+
+      .card .v {
+        margin-top: 0.25rem;
+        font-size: 1.13rem;
+        font-weight: 700;
+      }
+
+      .insight {
+        padding: 1rem;
+      }
+
+      .insight p {
+        margin: 0;
+        line-height: 1.55;
+      }
+
+      .warn {
+        color: var(--alert);
+        font-weight: 700;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes act2Sweep {
+        0% {
+          background-position: 130% 50%;
+        }
+        50% {
+          background-position: -30% 50%;
+        }
+        100% {
+          background-position: 130% 50%;
+        }
+      }
+
+      @keyframes act2GlowPulse {
+        0%,
+        100% {
+          opacity: 0.28;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #act2RefreshBtn::before,
+        #act2RefreshBtn::after,
+        #act2HeightRefreshBtn::before,
+        #act2HeightRefreshBtn::after,
+        #act2SkewRefreshBtn::before,
+        #act2SkewRefreshBtn::after,
+        #act2MultiRefreshBtn::before,
+        #act2MultiRefreshBtn::after,
+        #act3ShuffleBtn::before,
+        #act3ShuffleBtn::after,
+        #act3MatrixRefreshBtn::before,
+        #act3MatrixRefreshBtn::after,
+        #act3BoxRefreshBtn::before,
+        #act3BoxRefreshBtn::after,
+        #act4NullSimBtn::before,
+        #act4NullSimBtn::after,
+        #act5ResampleBtn::before,
+        #act5ResampleBtn::after,
+        #act5SimBtn::before,
+        #act5SimBtn::after,
+        #act4RunTestBtn::before,
+        #act4RunTestBtn::after {
+          animation: none;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .pie-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .dataset-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .act2-focus-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .act5-assumption-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .quantile-explain {
+          grid-template-columns: 1fr;
+        }
+
+        .quantile-meta {
+          grid-template-columns: 1fr;
+        }
+
+        .act7-dict-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .skew-meta {
+          grid-template-columns: 1fr;
+        }
+
+        .act3-multiples-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .act3-dino-focus {
+          grid-template-columns: 1fr;
+        }
+
+        #act3DinoSvg {
+          height: 200px;
+        }
+
+        .act3-split {
+          grid-template-columns: 1fr;
+        }
+
+        .act3-box-split {
+          grid-template-columns: 1fr;
+        }
+
+        .act4-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .assessment-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .mini-table {
+          min-height: 0;
+        }
+
+        .mini-table-scroll {
+          height: 260px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .act7-dict-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grain"></div>
+
+    <main>
+      <section class="hero">
+        <canvas id="heroParticles" width="1200" height="520" aria-hidden="true"></canvas>
+        <div class="hero-content">
+          <p class="hero-kicker">Explorable Explanation</p>
+          <h1>How Data Becomes Information</h1>
+          <p class="lead">
+            A guided story about turning a messy spreadsheet into evidence you can read, question, and explain.
+          </p>
+        </div>
+      </section>
+
+      <section class="assessment-panel" id="preAssessmentPanel">
+        <div class="assessment-head">
+          <p class="act-title">Quiz Time</p>
+          <h2>Let’s check where you stand</h2>
+        </div>
+        <p class="assessment-intro">
+          Before the story begins, answer ten questions about plots, summaries, and inference. The same ten questions
+          return at the end so you can compare where you started with where you finished.
+        </p>
+        <div class="assessment-toolbar">
+          <p class="assessment-summary" id="preAssessmentSummary">Submit once when you are finished.</p>
+        </div>
+        <div id="preAssessmentGrid" class="assessment-grid" aria-label="pre assessment questions"></div>
+        <p class="assessment-unlock-note">The same ten questions return at the end as a post-assessment, so the two scores are directly comparable.</p>
+        <div class="assessment-actions end">
+          <button id="preAssessmentNewParticipantBtn" type="button" hidden>Start As New Participant</button>
+          <button id="preAssessmentCheckBtn" type="button">Submit Assessment</button>
+        </div>
+      </section>
+
+      <section class="storyboard" data-pre-gated="true" hidden>
+        <p class="act-title">Act 1: The Panic</p>
+        <h2>The Inbox Saga: A Brief Tale of Panic and Better Decisions</h2>
+        <p class="story-intro">
+          We begin with panic, then slow down and learn how to ask better questions of the data.
+        </p>
+
+        <article class="story-card">
+          <p class="story-tag">Scene 1</p>
+          <h3>An email lands in your inbox: “Use data.csv to help us make more money.”</h3>
+          <p>
+            You open <code>data.csv</code> in Excel. There are hundreds of rows, too many columns, and no immediate
+            hint of what matters. In a moment of understandable stress, you click “Create Pie Chart” and hope the file
+            will reveal its secrets.
+          </p>
+          <div class="pie-gag">
+            <p class="pie-caption">Emergency deliverable</p>
+            <div class="pie-layout">
+              <div class="pie-3d" aria-hidden="true"></div>
+              <ul class="pie-legend" aria-label="Questionable pie chart legend">
+                <li><span class="swatch rev"></span> <code>monthlySpend</code></li>
+                <li><span class="swatch ops"></span> <code>monthlyIncome</code></li>
+                <li><span class="swatch ux"></span> <code>scrollVelocity</code></li>
+                <li><span class="swatch yellow-a"></span> <code>coffeeLoyaltyTier</code></li>
+                <li><span class="swatch yellow-b"></span> <code>cookies</code></li>
+              </ul>
+            </div>
+            <p class="pie-note">Behold: a 3D-ish pie chart, tilted for extra confusion, with two yellows that are hard to distinguish.</p>
+          </div>
+          <p>
+            It is visually ambitious. It still does not answer the question.
+          </p>
+        </article>
+
+        <article class="story-card">
+          <p class="story-tag">Scene 2</p>
+          <h3>You realize your supervisor wanted insight, not decorative geometry.</h3>
+          <p>
+            The task is not to decorate the spreadsheet. The task is to understand it. So you switch to Python or R,
+            where you can ask precise questions, repeat the analysis, and explain how you got the answer.
+          </p>
+        </article>
+
+        <article class="story-card">
+          <p class="story-tag">Scene 3</p>
+          <h3>You google mean, variance, and correlation like the rest of us.</h3>
+          <p>
+            You start with familiar summaries: means, variances, correlations. The first columns seem harmless enough:
+            <code>height</code>, <code>weight</code>, <code>monthlySpend</code>, <code>monthlyIncome</code>. This is
+            the point where statistics begins to replace guesswork.
+          </p>
+          <div class="mini-corr">
+            <p class="mini-corr-title">Correlation: It seems that the faster the scroll the lower the attention span.</p>
+            <p class="mini-axis-line"><code>x-axis</code>: <code>scrollingVelocity</code> &nbsp;|&nbsp; <code>y-axis</code>: <code>attentionSpan</code></p>
+            <div class="mini-corr-controls">
+              <label for="miniScrollVelocity">
+                <span><code>scrollingVelocity</code></span>
+                <span id="miniScrollVal">55</span>
+              </label>
+              <input id="miniScrollVelocity" type="range" min="0" max="100" step="1" value="55" />
+              <p class="mini-readout"><code>attentionSpan</code> (auto): <strong id="miniAttentionVal">-</strong></p>
+            </div>
+            <svg id="miniCorrSvg" viewBox="0 0 360 210" aria-label="scrollingVelocity attentionSpan chart"></svg>
+            <p class="mini-corr-note">Drag <code>scrollingVelocity</code>; <code>attentionSpan</code> updates on its own.</p>
+          </div>
+          <p>
+            Then the feature list becomes less reassuring: <code>scrollVelocity</code>, <code>keyboardPressure</code>,
+            <code>deviceType</code>, <code>hasCat</code>, <code>coffeeLoyaltyTier</code>, <code>cookies</code>, and,
+            somehow, <code>password</code>. That is the moment where the analysis question and the data-governance
+            question collide.
+          </p>
+          <div class="mini-user-chart">
+            <p class="mini-user-title">Suspicious Sample: <code>hasCat</code> and users' passwords</p>
+            <svg id="miniUserSvg" viewBox="0 0 360 200" aria-label="hasCat and password sample chart"></svg>
+            <p class="mini-user-legend">
+              <span><i class="mini-user-dot nocat"></i><code>hasCat=0</code></span>
+              <span><i class="mini-user-dot cat"></i><code>hasCat=1</code></span>
+            </p>
+            <p class="mini-user-note">Hover a point.</p>
+            <div class="mini-user-tooltip" id="miniUserTooltip"></div>
+          </div>
+          <p>
+            It may be statistically striking that passwords appear correlated with <code>hasCat</code>, but the real
+            lesson is simpler: not every available column should exist, and certainly not every column should be
+            analyzed.
+          </p>
+        </article>
+      </section>
+
+      <section class="formula-panel" data-pre-gated="true" hidden>
+        <p class="act-title">Act 2: The Numbers Arc</p>
+        <h2>One Dataset, Three Useful Summaries</h2>
+        <p>
+          One sample can be summarized in many ways. Here we focus on a small set of statistics that each answer a
+          different question: where the data is centered, how spread out it is, and how two variables move together.
+        </p>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 1</p>
+          <h3>You pin one mini dataset to the wall and squeeze three signals out of it.</h3>
+          <p>Here <code>x = monthlySpend</code> and <code>y = monthlyIncome</code>. We will use the same sample to show how different summaries answer different questions.</p>
+          <div class="dataset-layout">
+            <div class="mini-table">
+              <div class="mini-table-head">
+                <p class="mini-table-title">Mini Dataset (<span id="act2RowCount">-</span> users)</p>
+                <button id="act2RefreshBtn" type="button">New Sample</button>
+              </div>
+              <p class="act2-action-note">Refreshes all 100 users and recomputes every statistic in this scene.</p>
+              <div class="mini-table-scroll">
+                <table aria-label="mini sample dataset for statistics">
+                  <thead>
+                    <tr>
+                      <th>user</th>
+                      <th>x: monthlySpend</th>
+                      <th>y: monthlyIncome</th>
+                    </tr>
+                  </thead>
+                  <tbody id="act2TableBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="stat-three">
+              <div class="stat-card">
+                <p class="name">Sample Mean</p>
+                <div class="eq">$$\bar{x}=\frac{1}{n}\sum_{i=1}^{n}x_i$$</div>
+                <p class="stat-value">For this sample: x mean = <span id="act2MeanX">-</span></p>
+                <p class="stat-value">For this sample: y mean = <span id="act2MeanY">-</span></p>
+              </div>
+              <div class="stat-card">
+                <p class="name">Sample Variance</p>
+                <div class="eq">
+                  $$s_x^2=\frac{1}{n-1}\sum_{i=1}^{n}\left(x_i-\bar{x}\right)^2$$
+                  $$s_y^2=\frac{1}{n-1}\sum_{i=1}^{n}\left(y_i-\bar{y}\right)^2$$
+                </div>
+                <p class="stat-value">For this sample: var(x) = <span id="act2VarX">-</span></p>
+                <p class="stat-value">For this sample: var(y) = <span id="act2VarY">-</span></p>
+                <p class="stat-note">Variance is in squared currency units.</p>
+              </div>
+              <div class="stat-card">
+                <p class="name">Sample Covariance</p>
+                <div class="eq">$$\operatorname{cov}(x,y)=\frac{1}{n-1}\sum_{i=1}^{n}\left(x_i-\bar{x}\right)\left(y_i-\bar{y}\right)$$</div>
+                <p class="stat-value">For this sample: cov(x, y) = <span id="act2CovXY">-</span></p>
+                <p class="stat-note">Covariance is also in squared currency units.</p>
+              </div>
+            </div>
+          </div>
+          <div class="act2-bridge">
+            <p>
+              Variance and covariance are important, but they are not always easy to interpret directly. Their units
+              are squared, which makes them mathematically useful and visually awkward at the same time.
+            </p>
+            <p>
+              So in practice we often translate them into standard deviation for spread and correlation for
+              relationship strength. Those are usually easier to compare and explain.
+            </p>
+          </div>
+          <div class="act2-focus-grid">
+            <div class="stat-card">
+              <p class="name">Standard Deviation</p>
+              <div class="eq">$$s_x=\sqrt{s_x^2},\qquad s_y=\sqrt{s_y^2}$$</div>
+              <p class="stat-value">For this sample: sd(x) = <span id="act2SdX">-</span></p>
+              <p class="stat-value">For this sample: sd(y) = <span id="act2SdY">-</span></p>
+              <p class="stat-note">Spread in the original units, not squared units.</p>
+            </div>
+            <div class="stat-card">
+              <p class="name">Sample Correlation</p>
+              <div class="eq">$$r_{xy}=\frac{\operatorname{cov}(x,y)}{s_x s_y}$$</div>
+              <p class="stat-value">For this sample: r(x, y) = <span id="act2CorrXY">-</span></p>
+              <p class="stat-note">Correlation is unitless, so rescaling x or y does not change r.</p>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene quantile-scene">
+          <p class="story-tag">Scene 2</p>
+          <h3>Then we check the <code>height</code> column: histogram first, quantiles second, confidence level restored.</h3>
+          <p>
+            A single average hides structure. Quantiles recover some of that structure by asking where specific
+            percentiles sit in the sorted sample, such as the 10th, 50th, and 90th percentile.
+          </p>
+          <div class="quantile-explain">
+            <div class="quantile-blurb">
+              <p class="name">Histogram</p>
+              <p>
+                A histogram groups nearby values into bins and counts how many observations fall into each one. It is
+                a compact picture of shape: where values cluster, where gaps appear, and how wide the distribution is.
+              </p>
+            </div>
+            <div class="quantile-blurb">
+              <p class="name">Empirical Quantiles</p>
+              <p>
+                Quantiles are cut points in the ordered data. Q50 is the median, Q10 marks the point below which 10%
+                of observations fall, and Q90 marks the point below which 90% fall.
+              </p>
+            </div>
+          </div>
+          <div class="quantile-toolbar">
+            <button id="act2HeightRefreshBtn" type="button">Resample Heights</button>
+            <p class="quantile-note">Generates a fresh height sample from a near-normal population and updates the histogram + quantiles.</p>
+          </div>
+          <svg id="act2HeightHistSvg" viewBox="0 0 780 260" aria-label="height histogram with empirical quantiles"></svg>
+          <p class="quantile-hint">Bars = counts per bin. Dashed lines = Q10, Q50, Q90. Orange curve = a fitted normal reference, useful only as a rough comparison.</p>
+          <div class="quantile-meta">
+            <div class="quantile-chip">
+              <p class="name">Empirical Quantiles</p>
+              <p class="value">Q10 = <span id="act2Q10">-</span> cm</p>
+              <p class="value">Q50 = <span id="act2Q50">-</span> cm</p>
+              <p class="value">Q90 = <span id="act2Q90">-</span> cm</p>
+            </div>
+            <div class="quantile-chip">
+              <p class="name">Normal-ish Check</p>
+              <p class="value">n = <span id="act2HeightN">-</span></p>
+              <p class="value">mean(height) = <span id="act2HeightMean">-</span> cm</p>
+              <p class="value">sd(height) = <span id="act2HeightSd">-</span> cm</p>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene skew-scene">
+          <p class="story-tag">Scene 3</p>
+          <h3>Different shape, different center story: mode, median, and mean are not the same.</h3>
+          <p>
+            Mean, median, and mode all describe “center,” but they do not mean the same thing. The mode tracks the
+            highest local pile-up, the median marks the middle rank, and the mean reacts most strongly to long tails.
+          </p>
+          <div class="quantile-toolbar">
+            <button id="act2SkewRefreshBtn" type="button">Resample Skewed Data</button>
+            <p class="quantile-note">Refreshes both charts. Labels are vertically offset (mode top, median middle, mean bottom) to avoid overlap.</p>
+          </div>
+          <div class="skew-stack">
+            <div class="skew-chart">
+              <p class="skew-chart-title"><code>money_spent</code> (right-skewed)</p>
+              <svg id="act2SkewRightSvg" viewBox="0 0 780 260" aria-label="right skewed money spent distribution"></svg>
+              <p class="quantile-hint">Bars = histogram counts. Pink curve = smoothed density. Dashed lines = mode, median, mean.</p>
+              <div class="quantile-meta skew-meta">
+                <div class="quantile-chip">
+                  <p class="name">Mode</p>
+                  <p class="value">$<span id="act2SkewRightMode">-</span></p>
+                </div>
+                <div class="quantile-chip">
+                  <p class="name">Median</p>
+                  <p class="value">$<span id="act2SkewRightMedian">-</span></p>
+                </div>
+                <div class="quantile-chip">
+                  <p class="name">Mean</p>
+                  <p class="value">$<span id="act2SkewRightMean">-</span></p>
+                </div>
+              </div>
+              <p class="skew-order">Observed ordering: <strong id="act2SkewRightOrder">-</strong></p>
+            </div>
+            <div class="skew-chart">
+              <p class="skew-chart-title"><code>satisfaction_score</code> (left-skewed)</p>
+              <svg id="act2SkewLeftSvg" viewBox="0 0 780 260" aria-label="left skewed satisfaction score distribution"></svg>
+              <p class="quantile-hint">Same idea, but now the long tail pulls the mean in the opposite direction.</p>
+              <div class="quantile-meta skew-meta">
+                <div class="quantile-chip">
+                  <p class="name">Mode</p>
+                  <p class="value"><span id="act2SkewLeftMode">-</span></p>
+                </div>
+                <div class="quantile-chip">
+                  <p class="name">Median</p>
+                  <p class="value"><span id="act2SkewLeftMedian">-</span></p>
+                </div>
+                <div class="quantile-chip">
+                  <p class="name">Mean</p>
+                  <p class="value"><span id="act2SkewLeftMean">-</span></p>
+                </div>
+              </div>
+              <p class="skew-order">Observed ordering: <strong id="act2SkewLeftOrder">-</strong></p>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene skew-scene">
+          <p class="story-tag">Scene 4</p>
+          <h3>When the distribution has multiple peaks, mode can be miles away from median and mean.</h3>
+          <p>
+            A multimodal distribution has several peaks. In that case the mode points to the tallest peak, while the
+            median and mean summarize the data across all peaks at once.
+          </p>
+          <div class="quantile-toolbar">
+            <button id="act2MultiRefreshBtn" type="button">Resample Multi-Peak Bonus Points</button>
+            <p class="quantile-note">Creates a multi-peak <code>bonus_points</code> sample to show why one “most common” value can be misleading.</p>
+          </div>
+          <div class="skew-chart scene4-multi-chart">
+            <p class="skew-chart-title"><code>bonus_points</code> (multi-peaked)</p>
+            <svg id="act2MultiPeakSvg" viewBox="0 0 780 260" aria-label="multi-peaked bonus points distribution"></svg>
+            <p class="quantile-hint">The mode follows the tallest peak. The median and mean can fall between peaks, even when no observations gather there.</p>
+            <div class="quantile-meta skew-meta">
+              <div class="quantile-chip">
+                <p class="name">Mode</p>
+                <p class="value"><span id="act2MultiMode">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Median</p>
+                <p class="value"><span id="act2MultiMedian">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Mean</p>
+                <p class="value"><span id="act2MultiMean">-</span></p>
+              </div>
+            </div>
+            <p class="skew-order">Observed takeaway: <strong id="act2MultiOrder">-</strong></p>
+          </div>
+        </article>
+      </section>
+
+      <section class="formula-panel" data-pre-gated="true" hidden>
+        <p class="act-title">Act 3: Reality Check</p>
+        <h2>Sample Statistics Can Be Deceiving</h2>
+        <p>
+          Summary statistics are useful, but they are not the same thing as seeing the data. Different datasets can
+          share almost identical means, variances, and correlations while having completely different structure.
+        </p>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 1</p>
+          <h3>Thirteen datasets. Near-identical summary numbers. Totally different geometry.</h3>
+          <p>
+            Pick a dataset and watch the geometry change while the headline statistics barely move. This is the clearest
+            argument for plotting before interpreting.
+          </p>
+          <div class="act3-controls">
+            <label class="act3-select-wrap" for="act3DatasetSelect">
+              <span>Choose Dataset</span>
+              <select id="act3DatasetSelect" aria-label="Select Datasaurus Dozen dataset"></select>
+            </label>
+            <button id="act3ShuffleBtn" type="button">Random Dataset</button>
+            <p class="quantile-note">The summary numbers stay close. The shapes do not.</p>
+          </div>
+          <p class="act3-status" id="act3Status">Loading Datasaurus Dozen...</p>
+          <svg id="act3DozenSvg" viewBox="0 0 780 330" aria-label="Datasaurus Dozen scatter plot"></svg>
+          <p class="quantile-hint">Very similar statistics, very different shapes. Plot first, summarize second.</p>
+          <p class="quantile-note">This whole collection is called the <strong>Datasaurus Dozen</strong>.</p>
+          <div class="quantile-meta act3-meta">
+            <div class="quantile-chip">
+              <p class="name">Dataset</p>
+              <p class="value"><span id="act3DatasetName">-</span></p>
+            </div>
+            <div class="quantile-chip">
+              <p class="name">n</p>
+              <p class="value"><span id="act3N">-</span></p>
+            </div>
+            <div class="quantile-chip">
+              <p class="name">mean(x)</p>
+              <p class="value"><span id="act3MeanX">-</span></p>
+            </div>
+            <div class="quantile-chip">
+              <p class="name">mean(y)</p>
+              <p class="value"><span id="act3MeanY">-</span></p>
+            </div>
+            <div class="quantile-chip">
+              <p class="name">var(x)</p>
+              <p class="value"><span id="act3VarX">-</span></p>
+            </div>
+            <div class="quantile-chip">
+              <p class="name">var(y)</p>
+              <p class="value"><span id="act3VarY">-</span></p>
+            </div>
+            <div class="quantile-chip">
+              <p class="name">corr(x, y)</p>
+              <p class="value"><span id="act3Corr">-</span></p>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 2</p>
+          <h3>Now put 12 of them side by side and the lesson is impossible to ignore.</h3>
+          <p>
+            Similar means and correlations can hide lines, curves, clusters, and outliers. A table of summary numbers
+            can look perfectly calm while the geometry tells a much more specific story.
+          </p>
+          <div class="act3-dino-focus">
+            <div>
+              <p class="act3-mini-name">The Dinosaur</p>
+              <svg id="act3DinoSvg" viewBox="0 0 360 220" aria-label="Datasaurus dinosaur scatter plot"></svg>
+            </div>
+            <div class="act3-dino-stats">
+              <div class="act3-dino-chip">
+                <p class="name">mean(x)</p>
+                <p class="value"><span id="act3DinoMeanX">-</span></p>
+              </div>
+              <div class="act3-dino-chip">
+                <p class="name">mean(y)</p>
+                <p class="value"><span id="act3DinoMeanY">-</span></p>
+              </div>
+              <div class="act3-dino-chip">
+                <p class="name">sd(x)</p>
+                <p class="value"><span id="act3DinoSdX">-</span></p>
+              </div>
+              <div class="act3-dino-chip">
+                <p class="name">sd(y)</p>
+                <p class="value"><span id="act3DinoSdY">-</span></p>
+              </div>
+              <div class="act3-dino-chip">
+                <p class="name">var(x)</p>
+                <p class="value"><span id="act3DinoVarX">-</span></p>
+              </div>
+              <div class="act3-dino-chip">
+                <p class="name">var(y)</p>
+                <p class="value"><span id="act3DinoVarY">-</span></p>
+              </div>
+            </div>
+          </div>
+          <div id="act3SmallMultiples" class="act3-multiples-grid" aria-label="12 Datasaurus Dozen small multiple charts"></div>
+          <p class="quantile-note">
+            Takeaway: summary statistics tell you roughly how much; plots tell you what kind of pattern produced it.
+          </p>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 3</p>
+          <h3>Reality check, part two: wide data tables look serious, but pairwise plots reveal behavior faster.</h3>
+          <p>
+            A wide table stores the raw observations. A scatterplot matrix turns those same observations into visible
+            relationships. Both views matter, but they answer different questions.
+          </p>
+          <div class="quantile-toolbar">
+            <button id="act3MatrixRefreshBtn" type="button">Resample Wide Dataset</button>
+            <p class="quantile-note">
+              Refreshes <span id="act3WideRowCount">-</span> rows and <span id="act3WideColCount">-</span> numeric columns, then redraws the full pairwise scatter matrix. Hover any row to highlight that user in every scatter cell.
+            </p>
+          </div>
+          <div class="act3-split">
+            <div class="act3-table-shell">
+              <p class="act3-shell-title">Scrollable Dataset</p>
+              <p class="act3-hover-tip">Hover a row to trace that same observation across every scatterplot cell.</p>
+              <div class="act3-table-scroll">
+                <table aria-label="wide sample dataset">
+                  <thead id="act3WideTableHead"></thead>
+                  <tbody id="act3WideTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="act3-matrix-shell">
+              <p class="act3-shell-title">All Columns Against Each Other</p>
+              <div class="act3-pairplot-scroll">
+                <svg id="act3PairplotSvg" viewBox="0 0 900 900" aria-label="pairwise scatter matrix of all numeric columns"></svg>
+              </div>
+              <p class="quantile-note">Diagonal cells name the variables. Off-diagonal cells show every pairwise relationship.</p>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 4</p>
+          <h3>Boxplots: one compact way to see center, spread, and outliers.</h3>
+          <div class="act3-box-split">
+            <div class="act3-box-copy">
+              <p class="act3-shell-title">How To Read It</p>
+              <p>The box runs from Q1 to Q3, so it contains the middle 50% of the data.</p>
+              <p>The orange line marks the median. The whiskers extend to the most extreme non-outlying observations.</p>
+              <p>Points beyond the whiskers are flagged as outliers using the 1.5×IQR rule.</p>
+              <div class="act3-box-legend">
+                <span><i class="act3-box-swatch box"></i>IQR box (Q1 to Q3)</span>
+                <span><i class="act3-box-swatch med"></i>Median line</span>
+                <span><i class="act3-box-swatch out"></i>Outliers (outside 1.5 IQR)</span>
+              </div>
+              <div class="quantile-toolbar">
+                <label class="act3-select-wrap" for="act3BoxColumnSelect">
+                  <span>Column</span>
+                  <select id="act3BoxColumnSelect" aria-label="Select column for boxplot"></select>
+                </label>
+                <button id="act3BoxRefreshBtn" type="button">Resample For Boxplots</button>
+                <p class="quantile-note">
+                  Uses the same wide sample as Scene 3, so table, pairplot, and boxplots stay synced.
+                </p>
+              </div>
+            </div>
+            <div class="act3-box-shell">
+              <p class="act3-shell-title">Single Boxplot: <code id="act3BoxColumnLabel">monthly_spend</code></p>
+              <svg id="act3BoxplotSvg" viewBox="0 0 900 320" aria-label="single boxplot for monthly spend"></svg>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="formula-panel" data-pre-gated="true" hidden>
+        <p class="act-title">Act 4: The Trial</p>
+        <h2>Statistical Inference: Decision Time</h2>
+        <p>
+          Descriptive analysis tells you what happened in the sample. Inference asks whether the pattern is strong
+          enough to support a decision beyond that one sample.
+        </p>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 1</p>
+          <h3>First concept: what an A/B test actually is.</h3>
+          <p>
+            An A/B test compares two versions under controlled conditions. Group A sees the current version, Group B
+            sees the change, and we compare outcomes using the same metric and the same measurement window. Random
+            assignment matters because it makes the groups comparable before outcomes are observed.
+          </p>
+          <div class="act4-illus">
+            <svg viewBox="0 0 780 165" aria-label="A/B test split illustration">
+              <g transform="translate(0, 25)">
+                <rect x="18" y="32" width="150" height="42" rx="8" fill="#f1f8fe" stroke="#8db6d3" />
+                <text x="93" y="59" text-anchor="middle" fill="#2f5a75" font-size="13" font-weight="700">Incoming Users</text>
+                <line x1="168" y1="53" x2="252" y2="53" stroke="#2f5a75" stroke-width="1.5" />
+                <line x1="252" y1="53" x2="308" y2="30" stroke="#2f5a75" stroke-width="1.5" />
+                <line x1="252" y1="53" x2="308" y2="76" stroke="#2f5a75" stroke-width="1.5" />
+                <text x="238" y="38" text-anchor="middle" fill="#2f5a75" font-size="11">random split</text>
+                <rect x="308" y="2" width="210" height="50" rx="8" fill="#ebf7f2" stroke="#97c8b8" />
+                <text x="413" y="23" text-anchor="middle" fill="#2f5a75" font-size="12" font-weight="700">Control (A)</text>
+                <text x="413" y="39" text-anchor="middle" fill="#355b72" font-size="11">current version</text>
+                <rect x="308" y="54" width="210" height="50" rx="8" fill="#eef6fe" stroke="#98bdd7" />
+                <text x="413" y="75" text-anchor="middle" fill="#2f5a75" font-size="12" font-weight="700">Treatment (B)</text>
+                <text x="413" y="91" text-anchor="middle" fill="#355b72" font-size="11">new change</text>
+                <rect x="552" y="32" width="210" height="42" rx="8" fill="#fff8ee" stroke="#d6be8f" />
+                <text x="657" y="59" text-anchor="middle" fill="#2f5a75" font-size="12" font-weight="700">Compare Same Metric</text>
+                <text x="657" y="84" text-anchor="middle" fill="#355b72" font-size="11">e.g., conversion rate over same period</text>
+              </g>
+            </svg>
+            <p class="quantile-note">Randomization is not flashy, but it is what lets differences be interpreted as evidence rather than coincidence or selection bias.</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 2</p>
+          <h3>Second concept: expected lift is your pre-data hypothesis.</h3>
+          <p>
+            Before collecting data, you should say what improvement would be practically meaningful. For conversion
+            rates, lift is usually expressed in percentage points, not relative percent change.
+          </p>
+          <div class="act4-key-eq"><code>expected lift = p(B) - p(A)</code> (in percentage points)</div>
+          <div class="act4-illus">
+            <svg id="act4LiftDemoSvg" viewBox="0 0 780 165" aria-label="Expected lift draggable illustration"></svg>
+            <p class="quantile-note">
+              Drag the green distribution left or right. The control curve stays fixed, the treatment curve moves, and
+              the orange distance shows the expected difference <code>p(B) - p(A)</code>. Current lift:
+              <strong id="act4LiftDemoReadout">+1.5 pp</strong>
+            </p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 3</p>
+          <h3>Third concept: confidence intervals show uncertainty around the estimate.</h3>
+          <p>
+            A point estimate gives one best guess. A confidence interval adds uncertainty around that guess. Here the
+            orange dot is the observed lift, the blue segment is the 95% interval, and the dashed line at 0 marks “no
+            effect.”
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act4CiNRange"><span>Users per group</span><strong id="act4CiNVal">1,200</strong></label>
+                <input id="act4CiNRange" type="range" min="200" max="6000" step="100" value="1200" />
+              </div>
+              <div class="act4-control">
+                <label for="act4CiLiftRange"><span>Observed lift (pp)</span><strong id="act4CiLiftVal">+1.2 pp</strong></label>
+                <input id="act4CiLiftRange" type="range" min="-4" max="6" step="0.1" value="1.2" />
+              </div>
+            </div>
+            <p class="quantile-note">
+              Move <strong>Users per group</strong> to change the amount of sampling noise. More users typically give a
+              narrower interval. Move <strong>Observed lift</strong> to shift the estimate itself.
+            </p>
+            <svg id="act4CiConceptSvg" viewBox="0 0 780 210" aria-label="confidence interval concept explorer"></svg>
+            <p class="quantile-note" id="act4CiConceptText">Move sliders to see when the CI includes 0.</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 4</p>
+          <h3>Fourth concept: start with the thing we care about, the mean gap.</h3>
+          <p>
+            Every test starts with a simple comparison. For conversion, that comparison is a difference in rates. For
+            numeric outcomes, it is a difference in means. This raw difference is the effect we are trying to explain.
+          </p>
+          <div class="act4-key-eq"><code>observed gap = estimate(B) - estimate(A)</code></div>
+          <p class="quantile-note">
+            The raw gap is the signal of interest. On its own, however, it does not say whether the difference is large
+            relative to the noise in the measurement process.
+          </p>
+          <div class="act4-illus">
+            <svg id="act4ObservedGapSvg" viewBox="0 0 780 165" aria-label="Observed gap distribution illustration"></svg>
+            <p class="quantile-note">
+              This uses the same visual layout as expected lift, but now the curves represent observed group outcomes.
+              Drag the green curve to change the observed treatment mean and watch the gap update:
+              <strong id="act4ObservedGapReadout">+1.4 pp</strong>
+            </p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 5</p>
+          <h3>Fifth concept: standardize the gap into a z-statistic.</h3>
+          <p>
+            A raw gap becomes much more interpretable once we divide it by its standard error. The result is a
+            standardized statistic that tells us how far the observed effect is from zero in units of estimated noise.
+          </p>
+          <div class="act4-key-eq"><code>z = (observed gap - 0) / SE(observed gap)</code></div>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act4ZDiffRange"><span>Observed gap (pp)</span><strong id="act4ZDiffVal">+1.2 pp</strong></label>
+                <input id="act4ZDiffRange" type="range" min="-4" max="4" step="0.1" value="1.2" />
+              </div>
+              <div class="act4-control">
+                <label for="act4ZSeRange"><span>Standard error (pp)</span><strong id="act4ZSeVal">0.60 pp</strong></label>
+                <input id="act4ZSeRange" type="range" min="0.2" max="2.0" step="0.05" value="0.6" />
+              </div>
+            </div>
+            <p class="quantile-note">
+              Move the gap or SE slider and watch where the resulting z lands on the normal reference curve. The
+              orange marker is your observed z-statistic, not a probability region yet.
+            </p>
+            <svg id="act4ZConceptSvg" viewBox="0 0 780 210" aria-label="z-statistic on normal reference distribution"></svg>
+            <p class="quantile-note" id="act4ZConceptText">z = (gap - 0) / SE, measured in standard errors from no effect.</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 6</p>
+          <h3>Sixth concept: p-value asks how extreme that z would be under no effect.</h3>
+          <p>
+            Once we have a z-statistic, we ask how unusual it would be if the true effect were really zero. The
+            p-value answers exactly that question and nothing more.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act4PZRange"><span>Observed z-statistic</span><strong id="act4PZVal">2.00</strong></label>
+                <input id="act4PZRange" type="range" min="0.2" max="3.8" step="0.05" value="2.0" />
+              </div>
+            </div>
+            <p class="quantile-note">
+              Slide z to move the orange cutoff lines. Larger <code>|z|</code> makes shaded tails smaller (smaller
+              p-value); smaller <code>|z|</code> makes tails larger. The orange shading is the two-sided p-value
+              region under the no-effect model.
+            </p>
+            <svg id="act4PConceptSvg" viewBox="0 0 780 210" aria-label="p-value tails under null distribution"></svg>
+            <p class="quantile-note" id="act4PConceptText">Two-sided p-value: <strong id="act4PConceptPVal">-</strong></p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 7</p>
+          <h3>Seventh concept: unlikely events can happen once, but not all the time.</h3>
+          <p>
+            Rare outcomes still occur occasionally. So even when the true effect is zero, some experiments will look
+            impressive by chance alone. The point of p-values is not to prevent all false alarms, but to keep them
+            genuinely infrequent when the assumptions hold.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act4NullNRange"><span>Users per group (true null)</span><strong id="act4NullNVal">2,000</strong></label>
+                <input id="act4NullNRange" type="range" min="200" max="8000" step="100" value="2000" />
+              </div>
+              <div class="act4-control">
+                <label for="act4NullRunsRange"><span>Simulated null experiments</span><strong id="act4NullRunsVal">1,000</strong></label>
+                <input id="act4NullRunsRange" type="range" min="100" max="3000" step="50" value="1000" />
+              </div>
+            </div>
+            <div class="quantile-toolbar">
+              <button id="act4NullSimBtn" type="button">Simulate No-Effect World</button>
+              <p class="quantile-note">Histogram of p-values when treatment and control are truly identical.</p>
+            </div>
+            <svg id="act4NullPSvg" viewBox="0 0 780 210" aria-label="histogram of p-values under true no effect"></svg>
+            <p class="quantile-note" id="act4NullSummary">Running null simulation...</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 8</p>
+          <h3>The boss says “ship it.” You say “run the test first.”</h3>
+          <p>
+            This is the full inference loop: set the data-generating world, draw one experiment, inspect the estimate
+            and interval, then repeat. The goal is to see how much conclusions can move even when the underlying setup
+            stays the same.
+          </p>
+          <div class="act4-grid">
+            <div class="act4-panel">
+              <p class="act3-shell-title">Experiment Setup</p>
+              <div class="act4-controls">
+                <div class="act4-control">
+                  <label for="act4NRange"><span>Users per group</span><strong id="act4NVal">2,000</strong></label>
+                  <input id="act4NRange" type="range" min="300" max="8000" step="100" value="2000" />
+                </div>
+                <div class="act4-control">
+                  <label for="act4BaseRange"><span>Baseline conversion</span><strong id="act4BaseVal">12.0%</strong></label>
+                  <input id="act4BaseRange" type="range" min="2" max="40" step="0.5" value="12" />
+                </div>
+                <div class="act4-control">
+                  <label for="act4LiftRange"><span>Expected lift (pp)</span><strong id="act4LiftVal">+1.5 pp</strong></label>
+                  <input id="act4LiftRange" type="range" min="-3" max="8" step="0.1" value="1.5" />
+                </div>
+              </div>
+              <div class="quantile-meta act4-meta act4-setup-meta">
+                <div class="quantile-chip">
+                  <p class="name">Expected SE</p>
+                  <p class="value"><span id="act4ExpectedSe">-</span></p>
+                </div>
+                <div class="quantile-chip">
+                  <p class="name">Expected 95% Width</p>
+                  <p class="value"><span id="act4ExpectedWidth">-</span></p>
+                </div>
+              </div>
+              <p class="quantile-note" id="act4SetupHint">Adjust sliders to preview how noisy one run is likely to be.</p>
+              <p class="quantile-note">
+                These sliders define the world before any data is drawn: <strong>Users</strong> controls sampling
+                noise, <strong>Baseline conversion</strong> sets the control rate, and <strong>Expected lift</strong>
+                sets the treatment shift. <strong>Run Experiment</strong> then draws one random A/B test from that
+                setup.
+              </p>
+              <div class="quantile-toolbar act4-run-actions">
+                <button id="act4RunTestBtn" type="button">Run Experiment</button>
+                <button id="act4RunBatchBtn" class="act4-aux-btn" type="button">Run 25 Experiments</button>
+                <button id="act4ResetHistoryBtn" class="act4-aux-btn" type="button">Reset History</button>
+                <p class="quantile-note">Run one experiment to inspect the mechanics, or a batch to see how estimates vary across repeated samples.</p>
+              </div>
+              <p class="act3-hover-tip" id="act4DecisionText">Waiting for first run...</p>
+            </div>
+            <div class="act4-panel">
+              <p class="act3-shell-title">Estimated Lift With 95% CI</p>
+              <svg id="act4CiSvg" viewBox="0 0 780 230" aria-label="estimated lift with confidence interval"></svg>
+              <p class="quantile-hint">Dashed line at 0 means no effect. If CI crosses 0, the data still allows “no real change.”</p>
+              <div class="quantile-meta act4-meta">
+                <div class="quantile-chip">
+                  <p class="name">Control Rate</p>
+                  <p class="value"><span id="act4ControlRate">-</span></p>
+                </div>
+                <div class="quantile-chip">
+                  <p class="name">Treatment Rate</p>
+                  <p class="value"><span id="act4TreatmentRate">-</span></p>
+                </div>
+                <div class="quantile-chip">
+                  <p class="name">Observed Lift</p>
+                  <p class="value"><span id="act4ObservedLift">-</span></p>
+                </div>
+                <div class="quantile-chip">
+                  <p class="name">95% CI</p>
+                  <p class="value"><span id="act4CiText">-</span></p>
+                </div>
+                <div class="quantile-chip">
+                  <p class="name">p-value</p>
+                  <p class="value"><span id="act4PValue">-</span></p>
+                </div>
+                <div class="quantile-chip">
+                  <p class="name">Verdict</p>
+                  <p class="value"><span id="act4Verdict">-</span></p>
+                </div>
+              </div>
+              <div class="act4-history-block">
+                <p class="act3-shell-title">Run History</p>
+                <svg id="act4HistorySvg" viewBox="0 0 780 190" aria-label="history of observed lift across experiment runs"></svg>
+                <p class="quantile-note" id="act4HistoryHint">Each dot is one run. Green = lift, orange = harm, blue = inconclusive.</p>
+                <div class="quantile-meta act4-meta act4-history-meta">
+                  <div class="quantile-chip">
+                    <p class="name">Runs</p>
+                    <p class="value"><span id="act4RunCount">0</span></p>
+                  </div>
+                  <div class="quantile-chip">
+                    <p class="name">Lift Evidence Rate</p>
+                    <p class="value"><span id="act4LiftEvidenceRate">-</span></p>
+                  </div>
+                  <div class="quantile-chip">
+                    <p class="name">Inconclusive Rate</p>
+                    <p class="value"><span id="act4InconclusiveRate">-</span></p>
+                  </div>
+                  <div class="quantile-chip">
+                    <p class="name">Avg Observed Lift</p>
+                    <p class="value"><span id="act4AvgObservedLift">-</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="formula-panel" data-pre-gated="true" hidden>
+        <p class="act-title">Act 5: The Aftermath</p>
+        <h2>When Assumptions Collapse</h2>
+        <p>
+          You ship the product, congratulate yourself for being data-driven, and then the sales numbers collapse
+          catastrophically. A correct formula can still produce a bad decision if the assumptions behind it are wrong.
+          This act is about checking those assumptions before trusting the result.
+        </p>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 1</p>
+          <h3>You shipped the winner. The revenue chart fell off a cliff.</h3>
+          <p>
+            Your supervisor had the celebratory slide ready. The stakeholders were ready to brag. Then the live numbers
+            arrived, and they were dreadful. The formula may be mathematically correct, but the world may not match it.
+            If observations are dependent, segments behave differently, or the process is unstable, then the p-value
+            can look tidy while the decision is not.
+          </p>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 2</p>
+          <h3>Assumption checklist before trusting significance.</h3>
+          <p>
+            Before interpreting a test, ask whether the data-generating process matches the model behind the test. This
+            step is less glamorous than a dashboard and much more important.
+          </p>
+          <div class="act5-assumption-grid">
+            <div class="act5-assumption-card">
+              <p class="name">Independence</p>
+              <p>Are observations really independent, or clustered by day, campaign, device, or user session?</p>
+            </div>
+            <div class="act5-assumption-card">
+              <p class="name">Stable Process</p>
+              <p>Did traffic mix, seasonality, or tracking definitions change during the experiment window?</p>
+            </div>
+            <div class="act5-assumption-card">
+              <p class="name">Model Match</p>
+              <p>Does the test family match the metric type, or are we forcing the wrong distributional story?</p>
+            </div>
+            <div class="act5-assumption-card">
+              <p class="name">Scale Of Noise</p>
+              <p>Are hidden shocks and overdispersion making your standard errors too optimistic?</p>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 3</p>
+          <h3>Assumption Stress Test: false wins when true effect is zero.</h3>
+          <p>
+            In this simulator the true effect is exactly zero. The only thing we change is hidden volatility in the
+            data-generating process, and then we apply a naive z-test anyway. The question is simple: how often does
+            the test report significance when nothing is really there?
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act5NRange"><span>Users per group</span><strong id="act5NVal">1,500</strong></label>
+                <input id="act5NRange" type="range" min="200" max="6000" step="100" value="1500" />
+              </div>
+              <div class="act4-control">
+                <label for="act5RunsRange"><span>Experiments</span><strong id="act5RunsVal">1,200</strong></label>
+                <input id="act5RunsRange" type="range" min="200" max="3000" step="50" value="1200" />
+              </div>
+              <div class="act4-control">
+                <label for="act5ShockRange"><span>Hidden Volatility</span><strong id="act5ShockVal">0.02</strong></label>
+                <input id="act5ShockRange" type="range" min="0" max="0.22" step="0.01" value="0.02" />
+              </div>
+            </div>
+            <div class="quantile-toolbar">
+              <button id="act5SimBtn" type="button">Stress Test Assumptions</button>
+              <p class="quantile-note">Blue bars show the p-values produced under a true null. The orange bin counts false positives with <code>p &lt; 0.05</code>.</p>
+            </div>
+            <svg id="act5AssumptionSvg" viewBox="0 0 780 250" aria-label="p-value histogram under assumption stress"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">False Positive Rate</p>
+                <p class="value"><span id="act5FalseRate">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Expected Benchmark</p>
+                <p class="value">~5%</p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Median p-value</p>
+                <p class="value"><span id="act5MedianP">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Risk Label</p>
+                <p class="value"><span id="act5RiskLabel">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act5Summary">Running assumption stress test...</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 4</p>
+          <h3>Different worlds, different distributions.</h3>
+          <p>
+            Real data does not always look normal. Some metrics are skewed, some have heavy tails, and some combine
+            several subpopulations. Before choosing a test, inspect the shape you are actually dealing with.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act5DistType"><span>Distribution Family</span><strong>shape</strong></label>
+                <select id="act5DistType">
+                  <option value="normal">Normal</option>
+                  <option value="right_skew">Right-Skewed</option>
+                  <option value="left_skew">Left-Skewed</option>
+                  <option value="heavy_tail">Heavy-Tailed</option>
+                  <option value="bimodal">Bimodal</option>
+                </select>
+              </div>
+              <div class="act4-control">
+                <label for="act5DistNRange"><span>Sample Size</span><strong id="act5DistNVal">300</strong></label>
+                <input id="act5DistNRange" type="range" min="80" max="1200" step="20" value="300" />
+              </div>
+            </div>
+            <div class="quantile-toolbar">
+              <button id="act5ResampleBtn" type="button">Resample Distribution</button>
+              <p class="quantile-note">Bars = observed sample histogram. Orange line = the normal curve fitted to the same mean and standard deviation.</p>
+            </div>
+            <svg id="act5DistSvg" viewBox="0 0 780 240" aria-label="distribution shape explorer"></svg>
+            <p class="quantile-note" id="act5DistSummary">Sampling distribution...</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 5</p>
+          <h3>Diagnostics: do the normal assumptions hold?</h3>
+          <p>
+            A QQ-plot compares what your sample looks like to what a model predicts. Each dot pairs one theoretical
+            quantile with the corresponding observed quantile. If the dots stay close to the diagonal, the model is a
+            reasonable description. If they bend away, the model is missing something important.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act5QqDistType"><span>Sample Distribution</span><strong>compare to normal</strong></label>
+                <select id="act5QqDistType">
+                  <option value="normal">Normal</option>
+                  <option value="right_skew">Right-Skewed</option>
+                  <option value="left_skew">Left-Skewed</option>
+                  <option value="heavy_tail">Heavy-Tailed</option>
+                  <option value="bimodal">Bimodal</option>
+                </select>
+              </div>
+            </div>
+            <svg id="act5QqSvg" viewBox="0 0 780 240" aria-label="qq plot diagnostics for current sample"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">QQ Correlation</p>
+                <p class="value"><span id="act5QqCorr">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Decision Hint</p>
+                <p class="value"><span id="act5DiagVerdict">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act5DiagSummary">Diagnostics waiting for sample...</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 6</p>
+          <h3>Why this generalizes: measured quantiles vs theoretical quantiles.</h3>
+          <p>
+            QQ-plots are not just for normality checks. They work for any model family for which you can compute
+            theoretical quantiles. The basic question stays the same: do the ordered observations line up with what the
+            model predicts?
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act5QqScenarioDataType"><span>Sample Family</span><strong>measured</strong></label>
+                <select id="act5QqScenarioDataType">
+                  <option value="normal">Normal</option>
+                  <option value="logistic">Logistic</option>
+                  <option value="laplace">Laplace</option>
+                  <option value="right_skew" selected>Right-Skewed</option>
+                  <option value="left_skew">Left-Skewed</option>
+                  <option value="heavy_tail">Heavy-Tailed</option>
+                  <option value="bimodal">Bimodal</option>
+                </select>
+              </div>
+              <div class="act4-control">
+                <label for="act5QqScenarioRefType"><span>Reference Family</span><strong>theoretical</strong></label>
+                <select id="act5QqScenarioRefType">
+                  <option value="normal" selected>Normal</option>
+                  <option value="logistic">Logistic</option>
+                  <option value="laplace">Laplace</option>
+                  <option value="right_skew">Right-Skewed (Lognormal)</option>
+                  <option value="left_skew">Left-Skewed (Mirrored Lognormal)</option>
+                </select>
+              </div>
+              <div class="act4-control">
+                <label for="act5QqScenarioNRange"><span>Sample Size</span><strong id="act5QqScenarioNVal">260</strong></label>
+                <input id="act5QqScenarioNRange" type="range" min="80" max="1200" step="20" value="260" />
+              </div>
+            </div>
+            <svg id="act5QqScenarioSvg" viewBox="0 0 780 240" aria-label="qq plot comparing measured and theoretical quantiles across distribution families"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">QQ Correlation</p>
+                <p class="value"><span id="act5QqScenarioCorr">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Model Match Hint</p>
+                <p class="value"><span id="act5QqScenarioVerdict">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act5QqScenarioSummary">Choose a sample and a reference family to compare quantiles.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="formula-panel" data-pre-gated="true" hidden>
+        <p class="act-title">Act 6: The Negotiation</p>
+        <h2>Point Estimates Before “Max It”</h2>
+        <p>
+          Once you think you know which variable matters, the temptation is to turn it up as far as possible. Point
+          estimation is the step where you slow down and quantify how large the effect appears to be in the data.
+        </p>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 1</p>
+          <h3>The manager plan: push one lever to 11.</h3>
+          <p>
+            “If higher promo score is associated with higher revenue, just maximize promo score” sounds decisive. It is
+            also not yet analysis. Before acting, we need a point estimate: one best numerical summary of the effect in
+            the sample we actually observed.
+          </p>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 2</p>
+          <h3>Point estimate = one best guess from one sample.</h3>
+          <p>
+            A point estimate is a single value computed from the sample. In a simple linear model, the slope estimate
+            tells us how much the outcome changes, on average, when the predictor increases by one unit.
+          </p>
+          <div class="formula-grid">
+            <div class="formula">
+              <p class="name">Estimated slope</p>
+              <div class="eq">$$\hat{\beta}_1 = \frac{\sum_i (x_i-\bar{x})(y_i-\bar{y})}{\sum_i (x_i-\bar{x})^2}$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Estimated line</p>
+              <div class="eq">$$\hat{y} = \hat{\beta}_0 + \hat{\beta}_1 x$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Predicted change</p>
+              <div class="eq">$$\widehat{\Delta y} = \hat{\beta}_1 \cdot \Delta x$$</div>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 3</p>
+          <h3>One sample, one slope estimate.</h3>
+          <p>
+            The orange line is the data-generating effect used in the simulation. The blue line is the estimate from
+            this one sample. The two are related, but they are not guaranteed to match exactly because sampling adds
+            noise.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act6NRange"><span>Sample Size</span><strong id="act6NVal">70</strong></label>
+                <input id="act6NRange" type="range" min="20" max="300" step="5" value="70" />
+              </div>
+              <div class="act4-control">
+                <label for="act6TrueSlopeRange"><span>True Effect (hidden)</span><strong id="act6TrueSlopeVal">1.40</strong></label>
+                <input id="act6TrueSlopeRange" type="range" min="-1.5" max="3.5" step="0.1" value="1.4" />
+              </div>
+              <div class="act4-control">
+                <label for="act6NoiseRange"><span>Noise Level</span><strong id="act6NoiseVal">28</strong></label>
+                <input id="act6NoiseRange" type="range" min="6" max="70" step="1" value="28" />
+              </div>
+            </div>
+            <div class="quantile-toolbar">
+              <button id="act6ResampleBtn" type="button">Draw New Sample</button>
+              <p class="quantile-note">Each new sample produces a new fitted line, which is exactly why point estimates should be interpreted with care.</p>
+            </div>
+            <svg id="act6ScatterSvg" viewBox="0 0 780 240" aria-label="point estimate scatterplot with true and estimated slope"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">Estimated Slope</p>
+                <p class="value"><span id="act6SlopeEst">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Slope Bias</p>
+                <p class="value"><span id="act6SlopeBias">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Predicted Lift (40 → 90)</p>
+                <p class="value"><span id="act6PredLift">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act6PointSummary">Drawing first sample...</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 4</p>
+          <h3>The estimate itself is random.</h3>
+          <p>
+            Keep the underlying process fixed and repeat the sampling. The point estimate still moves. That does not
+            mean the method is broken; it means estimates are themselves random quantities.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act6RunsRange"><span>Repeated Samples</span><strong id="act6RunsVal">400</strong></label>
+                <input id="act6RunsRange" type="range" min="80" max="3000" step="20" value="400" />
+              </div>
+            </div>
+            <div class="quantile-toolbar">
+              <button id="act6ResimBtn" type="button">Simulate Estimator Spread</button>
+              <p class="quantile-note">Histogram of slope estimates across repeated samples from the same true model (orange = true slope, blue dashed = average estimate).</p>
+            </div>
+            <svg id="act6SlopeDistSvg" viewBox="0 0 780 220" aria-label="sampling distribution of point estimates"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">Average Estimate</p>
+                <p class="value"><span id="act6DistMean">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Estimate SD</p>
+                <p class="value"><span id="act6DistSd">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act6DistSummary">Running repeated sampling...</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 5</p>
+          <h3>Method of Moments: match what your sample “looks like.”</h3>
+          <p>
+            A moment is a numerical summary built from powers of the data. The first moment captures location, and the
+            second central moment captures spread. Method of Moments chooses parameters so the model reproduces those
+            same summaries.
+          </p>
+          <p>
+            In this example, MoM is straightforward: match the sample’s center and spread to the center and spread
+            implied by the model. It is fast and interpretable, but it can react strongly when a few extreme values
+            distort the sample moments.
+          </p>
+          <div class="formula-grid">
+            <div class="formula">
+              <p class="name">Moment Matching (Laplace)</p>
+              <div class="eq">$$\hat{\mu}_{\text{MoM}}=\bar{x},\qquad \hat{b}_{\text{MoM}}=\sqrt{\frac{1}{2n}\sum_i (x_i-\bar{x})^2}$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">MoM Intuition</p>
+              <div class="eq">$$\text{sample location + spread} \approx \text{model location + spread}$$</div>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 6</p>
+          <h3>Maximum Likelihood: choose parameters that make this sample most plausible.</h3>
+          <p>
+            Maximum likelihood estimation asks which parameter values make the observed sample most plausible under the
+            model. Instead of matching a few summaries, it uses the full likelihood of the observed data.
+          </p>
+          <p>
+            For Laplace data, this leads to a center estimate based on the median rather than the mean. That makes the
+            location estimate less sensitive to outliers. MoM says “match summaries”; MLE says “maximize plausibility.”
+          </p>
+          <div class="formula-grid">
+            <div class="formula">
+              <p class="name">Likelihood Idea</p>
+              <div class="eq">$$\hat{\theta}_{\text{MLE}}=\arg\max_{\theta}\prod_{i=1}^n f(x_i\mid\theta)$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Closed Form (Laplace)</p>
+              <div class="eq">$$\hat{\mu}_{\text{MLE}}=\mathrm{median}(x_i),\qquad \hat{b}_{\text{MLE}}=\frac{1}{n}\sum_i \lvert x_i-\hat{\mu}_{\text{MLE}}\rvert$$</div>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 7</p>
+          <h3>Same data, two estimators.</h3>
+          <p>
+            Here both estimators see exactly the same sample. As the outlier rate increases, you can compare how a
+            mean-based method and a median-based method respond to the same contamination.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act6MomNRange"><span>Sample Size</span><strong id="act6MomNVal">120</strong></label>
+                <input id="act6MomNRange" type="range" min="30" max="500" step="10" value="120" />
+              </div>
+              <div class="act4-control">
+                <label for="act6OutlierRange"><span>Outlier Rate</span><strong id="act6OutlierVal">0.05</strong></label>
+                <input id="act6OutlierRange" type="range" min="0" max="0.25" step="0.01" value="0.05" />
+              </div>
+            </div>
+            <div class="quantile-toolbar">
+              <button id="act6MomMleResampleBtn" type="button">Draw New Lift Sample</button>
+              <p class="quantile-note">Dots are user-level lift values. Vertical markers: orange true center, blue MoM center, green MLE center.</p>
+            </div>
+            <svg id="act6MomMleSvg" viewBox="0 0 780 220" aria-label="method of moments versus maximum likelihood on one sample"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">MoM Location</p>
+                <p class="value"><span id="act6MomMu">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">MoM Scale</p>
+                <p class="value"><span id="act6MomB">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">MLE Location</p>
+                <p class="value"><span id="act6MleMu">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">MLE Scale</p>
+                <p class="value"><span id="act6MleB">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act6MomMleSummary">Drawing MoM vs MLE sample...</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="formula-panel" data-pre-gated="true" hidden>
+        <p class="act-title">Act 7: The Press Conference</p>
+        <h2>Formal Testing Before Public Bragging</h2>
+        <p>
+          Estimation tells you what the sample suggests. Formal testing tells you how to express that evidence in a
+          disciplined way when the claim will be presented as more than an internal hunch.
+        </p>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 1</p>
+          <h3>Parameter estimation vs statistical testing.</h3>
+          <p>
+            Estimation and testing are related, but they answer different questions. Estimation focuses on magnitude:
+            how large is the effect? Testing focuses on evidence against a specific null claim.
+          </p>
+          <div class="formula-grid">
+            <div class="formula">
+              <p class="name">Estimation</p>
+              <div class="eq">$$\text{Estimate } \theta \text{ and quantify uncertainty around } \hat{\theta}$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Testing</p>
+              <div class="eq">$$H_0:\theta=\theta_0 \quad\text{vs}\quad H_1:\theta\neq\theta_0$$</div>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 2</p>
+          <h3>Hypothesis-testing dictionary</h3>
+          <p>
+            Statistical testing has a small vocabulary that needs to stay precise. Getting these terms straight makes
+            the later procedures much easier to follow.
+          </p>
+          <div class="formula-grid act7-dict-grid">
+            <div class="formula">
+              <p class="name">Null Hypothesis</p>
+              <p>\(H_0\): the reference claim you test against, usually “no effect” or “no difference.”</p>
+              <div class="eq">$$H_0:\theta=\theta_0$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Alternative Hypothesis</p>
+              <p>\(H_1\): the competing claim you would support if the data looks inconsistent with \(H_0\).</p>
+              <div class="eq">$$H_1:\theta\neq\theta_0\ \text{or}\ \theta>\theta_0\ \text{or}\ \theta<\theta_0$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Significance Level</p>
+              <p>\(\alpha\): the false-positive tolerance you choose before looking at the result.</p>
+              <div class="eq">$$\alpha=P(\text{Reject }H_0\mid H_0\text{ true})$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Test Statistic</p>
+              <p>A number computed from the sample that measures how far the observed estimate is from the null value.</p>
+              <div class="eq">$$T=\frac{\text{estimate}-\text{null value}}{\text{standard error}}$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">p-value</p>
+              <p>
+                The probability, assuming \(H_0\), of seeing a test statistic at least as extreme as the one you observed.
+              </p>
+            </div>
+            <div class="formula">
+              <p class="name">Decision Rule</p>
+              <p>
+                If \(p\le\alpha\), reject \(H_0\). If \(p>\alpha\), fail to reject \(H_0\). That is not proof that \(H_0\) is true; it only means the sample was not convincing enough.
+              </p>
+            </div>
+          </div>
+          <p class="quantile-note">
+            Practical translation: a small p-value means “hard to explain by random variation if the null model were true,” not “guaranteed success.”
+          </p>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 3</p>
+          <h3>How to perform a statistical test, step by step.</h3>
+          <p>
+            A statistical test is not a single button press. It is a short sequence of design and interpretation
+            choices, and skipping any one of them weakens the conclusion.
+          </p>
+          <div class="formula-grid act7-dict-grid">
+            <div class="formula">
+              <p class="name">Step 1: Frame The Question</p>
+              <p>State the metric, the effect size that would matter in practice, and the hypotheses (\(H_0, H_1\)).</p>
+            </div>
+            <div class="formula">
+              <p class="name">Step 2: Pick The Test</p>
+              <p>Choose a test whose assumptions fit the data and the question you are asking.</p>
+            </div>
+            <div class="formula">
+              <p class="name">Step 3: Lock Rules Before Data Peek</p>
+              <p>Set \(\alpha\), choose one-sided or two-sided testing, and decide on any multiple-testing correction in advance.</p>
+            </div>
+            <div class="formula">
+              <p class="name">Step 4: Compute Statistic</p>
+              <p>Use the sample to compute the estimate, its standard error, and the resulting test statistic.</p>
+            </div>
+            <div class="formula">
+              <p class="name">Step 5: Quantify Evidence</p>
+              <p>Turn the test statistic into a p-value or compare it with a pre-defined critical threshold.</p>
+            </div>
+            <div class="formula">
+              <p class="name">Step 6: Report Responsibly</p>
+              <p>Report the decision together with the estimated effect and uncertainty, not the p-value alone.</p>
+            </div>
+          </div>
+          <p class="quantile-note">
+            Suggested reporting template: “Estimated lift = X, 95% CI = [L, U], test = ..., p = ..., assumptions checked = ...”.
+          </p>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 4</p>
+          <h3>Z-test concept: what it tests, why it works.</h3>
+          <p>
+            A z-test asks whether the observed sample mean is farther from a null mean than we would expect from random
+            sampling alone. It relies on a normal model and a known population standard deviation \(\sigma\).
+          </p>
+          <p>
+            Under \(H_0:\mu=\mu_0\), the sampling distribution of \(\bar{X}\) is centered at \(\mu_0\) with standard
+            error \(\sigma/\sqrt{n}\). So the natural next step is to measure the observed mean in standard-error
+            units:
+          </p>
+          <div class="formula-grid">
+            <div class="formula">
+              <p class="name">Z Statistic</p>
+              <div class="eq">$$Z=\frac{\bar{X}-\mu_0}{\sigma/\sqrt{n}}$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Null Distribution</p>
+              <div class="eq">$$Z\mid H_0 \sim \mathcal N(0,1)$$</div>
+            </div>
+          </div>
+          <p class="quantile-note">
+            If \(H_0\) is true, large values of \(|Z|\) are rare. That is why a large standardized gap translates into
+            a small p-value.
+          </p>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 5</p>
+          <h3>Z-test: normal model with known variance.</h3>
+          <p>
+            Here you can vary the sample size, the null mean, the true mean, and the known spread. The test then asks
+            whether the sampled mean looks unusually far from \(\mu_0\) relative to the noise level \(\sigma/\sqrt{n}\).
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act7ZNRange"><span>Sample Size</span><strong id="act7ZNVal">60</strong></label>
+                <input id="act7ZNRange" type="range" min="15" max="400" step="5" value="60" />
+              </div>
+              <div class="act4-control">
+                <label for="act7ZMu0Range"><span>Null Mean μ₀</span><strong id="act7ZMu0Val">100.0</strong></label>
+                <input id="act7ZMu0Range" type="range" min="90" max="110" step="0.5" value="100" />
+              </div>
+              <div class="act4-control">
+                <label for="act7ZTrueMuRange"><span>True Mean μ</span><strong id="act7ZTrueMuVal">101.2</strong></label>
+                <input id="act7ZTrueMuRange" type="range" min="90" max="110" step="0.1" value="101.2" />
+              </div>
+              <div class="act4-control">
+                <label for="act7ZSigmaRange"><span>Known σ</span><strong id="act7ZSigmaVal">8.0</strong></label>
+                <input id="act7ZSigmaRange" type="range" min="2" max="20" step="0.5" value="8" />
+              </div>
+            </div>
+            <div class="quantile-toolbar">
+              <button id="act7ZSampleBtn" type="button">Draw New Z-Test Sample</button>
+              <p class="quantile-note">Two-sided test shown. The orange tails are the null-distribution probability mass at least as extreme as the observed z-statistic.</p>
+            </div>
+            <svg id="act7ZSvg" viewBox="0 0 780 240" aria-label="z test null distribution and observed statistic"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">Sample Mean</p>
+                <p class="value"><span id="act7ZXbar">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">z Statistic</p>
+                <p class="value"><span id="act7ZStat">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">p-value</p>
+                <p class="value"><span id="act7ZP">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Decision (α=0.05)</p>
+                <p class="value"><span id="act7ZDecision">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act7ZSummary">Draw a sample to run the z-test.</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 6</p>
+          <h3>t-test concept: what changes when variance is unknown.</h3>
+          <p>
+            In practice, the population spread \(\sigma\) is usually unknown. We replace it with the sample standard
+            deviation \(s\), which introduces extra uncertainty because the denominator is now estimated from the same
+            data.
+          </p>
+          <p>
+            The correct null reference becomes Student’s t distribution with \(n-1\) degrees of freedom. Its heavier
+            tails acknowledge that extra uncertainty and therefore make the test more conservative for smaller samples.
+          </p>
+          <div class="formula-grid">
+            <div class="formula">
+              <p class="name">t Statistic</p>
+              <div class="eq">$$T=\frac{\bar{X}-\mu_0}{s/\sqrt{n}}$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Null Distribution</p>
+              <div class="eq">$$T\mid H_0 \sim t_{n-1}$$</div>
+            </div>
+          </div>
+          <p class="quantile-note">
+            As the sample size grows, the estimate of spread becomes more stable and the t distribution approaches the
+            normal distribution. That is why z-tests and t-tests become very similar at large \(n\).
+          </p>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 7</p>
+          <h3>t-test: normal model with unknown variance.</h3>
+          <p>
+            This interactive version shows the same logic with unknown variance. The sample standard deviation is now
+            part of the test statistic, so the p-value is read from a t distribution rather than a standard normal.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act7TNRange"><span>Sample Size</span><strong id="act7TNVal">25</strong></label>
+                <input id="act7TNRange" type="range" min="8" max="250" step="1" value="25" />
+              </div>
+              <div class="act4-control">
+                <label for="act7TMu0Range"><span>Null Mean μ₀</span><strong id="act7TMu0Val">100.0</strong></label>
+                <input id="act7TMu0Range" type="range" min="90" max="110" step="0.5" value="100" />
+              </div>
+              <div class="act4-control">
+                <label for="act7TTrueMuRange"><span>True Mean μ</span><strong id="act7TTrueMuVal">101.2</strong></label>
+                <input id="act7TTrueMuRange" type="range" min="90" max="110" step="0.1" value="101.2" />
+              </div>
+              <div class="act4-control">
+                <label for="act7TSigmaRange"><span>True σ (unknown to test)</span><strong id="act7TSigmaVal">8.0</strong></label>
+                <input id="act7TSigmaRange" type="range" min="2" max="20" step="0.5" value="8" />
+              </div>
+            </div>
+            <div class="quantile-toolbar">
+              <button id="act7TSampleBtn" type="button">Draw New t-Test Sample</button>
+              <p class="quantile-note">Smaller n means heavier tails: t is more conservative than z when variance is estimated. The orange tails are the t-test p-value region under \(H_0\).</p>
+            </div>
+            <svg id="act7TSvg" viewBox="0 0 780 240" aria-label="t test null distribution and observed statistic"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">Sample Mean</p>
+                <p class="value"><span id="act7TXbar">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Sample SD</p>
+                <p class="value"><span id="act7TSVal">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">t Statistic</p>
+                <p class="value"><span id="act7TTStat">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">p-value</p>
+                <p class="value"><span id="act7TP">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Decision (α=0.05)</p>
+                <p class="value"><span id="act7TDecision">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act7TSummary">Draw a sample to run the t-test.</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 8</p>
+          <h3>Two-sample t-test: comparing two independent groups.</h3>
+          <p>
+            Sometimes you are not comparing one sample against a fixed benchmark. You are comparing two separate
+            groups: control versus treatment, old layout versus new layout, one region versus another. The quantity of
+            interest is then the difference between two sample means.
+          </p>
+          <p>
+            The key assumption is independence between the two groups. If the users in group A are not the same users
+            as the users in group B, then each group contributes its own mean and its own uncertainty. The standard
+            error has to account for both sources of sampling noise.
+          </p>
+          <div class="formula-grid">
+            <div class="formula">
+              <p class="name">Difference In Means</p>
+              <div class="eq">$$\hat{\Delta}=\bar{X}_1-\bar{X}_2$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Welch Two-Sample t</p>
+              <div class="eq">$$T=\frac{\bar{X}_1-\bar{X}_2}{\sqrt{s_1^2/n_1+s_2^2/n_2}}$$</div>
+            </div>
+          </div>
+          <p class="quantile-note">
+            In practice, Welch's t-test is usually the safer default because it does not require the two groups to have
+            exactly the same variance. If the groups are independent, this is the right family of test. If the same
+            people appear in both groups, it is not.
+          </p>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 9</p>
+          <h3>Paired t-test: test the within-person change, not the raw scores.</h3>
+          <p>
+            A paired design happens when observations come in natural pairs: before and after for the same user, left
+            hand versus right hand for the same person, or matched pairs chosen to be directly comparable. In that
+            setup, the data point is really the difference inside each pair.
+          </p>
+          <p>
+            That changes the analysis completely. Rather than comparing two independent means, we compute one
+            difference per pair and run a one-sample t-test on those differences. This often gives a cleaner estimate
+            because stable person-to-person variation cancels out.
+          </p>
+          <div class="formula-grid">
+            <div class="formula">
+              <p class="name">Pairwise Differences</p>
+              <div class="eq">$$d_i = x_{i,\mathrm{after}} - x_{i,\mathrm{before}}$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Paired t Statistic</p>
+              <div class="eq">$$T=\frac{\bar{d}-\mu_{d,0}}{s_d/\sqrt{n}}$$</div>
+            </div>
+          </div>
+          <p class="quantile-note">
+            The paired t-test is powerful when pairing is meaningful, because each person acts as their own reference.
+            If you ignore the pairing and run an independent-groups test instead, you throw away that structure and can
+            make the result noisier than it needs to be.
+          </p>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 10</p>
+          <h3>Type I and Type II errors.</h3>
+          <p>
+            Every test balances two kinds of mistakes. A Type I error means declaring an effect that is not really
+            there. A Type II error means missing a real effect. Reducing one often makes the other more likely unless
+            you improve the design with more data or a stronger signal.
+          </p>
+          <div class="formula-grid">
+            <div class="formula">
+              <p class="name">Type I Error</p>
+              <div class="eq">$$\alpha=P(\text{Reject }H_0\mid H_0\text{ true})$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Type II Error</p>
+              <div class="eq">$$\beta=P(\text{Fail to reject }H_0\mid H_1\text{ true})$$</div>
+            </div>
+            <div class="formula">
+              <p class="name">Power</p>
+              <div class="eq">$$1-\beta=P(\text{Reject }H_0\mid H_1\text{ true})$$</div>
+            </div>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 11</p>
+          <h3>Effect Size: how big is the effect, really?</h3>
+          <p>
+            Effect size is about magnitude, not merely detectability. It answers “how large is the difference?” rather
+            than only “did the test cross a threshold?”
+          </p>
+          <p>
+            Lift is related but not identical. Lift is usually the business-facing change in raw or relative units,
+            whereas effect size is the statistical measure of magnitude, often standardized to make comparisons across
+            settings easier.
+          </p>
+          <div class="formula-grid">
+            <div class="formula">
+              <p class="name">Absolute Lift</p>
+              <div class="eq">$$\text{Lift}_{\text{abs}}=\bar{y}_{\text{treat}}-\bar{y}_{\text{control}}$$</div>
+              <p>Unit: same as metric (e.g., dollars, percentage points).</p>
+            </div>
+            <div class="formula">
+              <p class="name">Relative Lift</p>
+              <div class="eq">$$\text{Lift}_{\text{rel}}=\frac{\bar{y}_{\text{treat}}-\bar{y}_{\text{control}}}{\bar{y}_{\text{control}}}$$</div>
+              <p>Unitless ratio, but tied to baseline level.</p>
+            </div>
+            <div class="formula">
+              <p class="name">Standardized Effect Size</p>
+              <div class="eq">$$d=\frac{\bar{y}_{\text{treat}}-\bar{y}_{\text{control}}}{s_{\text{pooled}}}$$</div>
+              <p>Unitless “how many SDs apart” magnitude (useful across metrics).</p>
+            </div>
+          </div>
+          <p class="quantile-note">
+            In practice, report both: effect size for statistical magnitude and lift for business interpretation.
+          </p>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 12</p>
+          <h3>Power of a test: chance to detect a real effect.</h3>
+          <p>
+            Power is the probability that the test will correctly detect a real effect of the size you care about. It
+            depends on sample size, effect size, noise level, and the chosen significance threshold.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act7PowerNRange"><span>Current n</span><strong id="act7PowerNVal">80</strong></label>
+                <input id="act7PowerNRange" type="range" min="10" max="600" step="5" value="80" />
+              </div>
+              <div class="act4-control">
+                <label for="act7PowerEffectRange"><span>Effect Size (μ-μ₀)</span><strong id="act7PowerEffectVal">0.30</strong></label>
+                <input id="act7PowerEffectRange" type="range" min="0" max="1.5" step="0.01" value="0.3" />
+              </div>
+              <div class="act4-control">
+                <label for="act7PowerAlphaRange"><span>Significance α</span><strong id="act7PowerAlphaVal">0.05</strong></label>
+                <input id="act7PowerAlphaRange" type="range" min="0.005" max="0.2" step="0.005" value="0.05" />
+              </div>
+            </div>
+            <svg id="act7PowerSvg" viewBox="0 0 780 220" aria-label="power curve versus sample size"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">Power at Current n</p>
+                <p class="value"><span id="act7PowerVal">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Type II Error β</p>
+                <p class="value"><span id="act7BetaVal">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Type I Error α</p>
+                <p class="value"><span id="act7AlphaVal">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act7PowerSummary">Adjust controls to inspect design power.</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 13</p>
+          <h3>p-values: tail probability under the null.</h3>
+          <p>
+            A p-value is a conditional probability. It is computed under the assumption that the null model is true,
+            and it asks how extreme the observed test statistic would look in that world.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act7PZRange"><span>Observed z</span><strong id="act7PZVal">2.10</strong></label>
+                <input id="act7PZRange" type="range" min="-4" max="4" step="0.01" value="2.1" />
+              </div>
+            </div>
+            <p class="quantile-note">
+              The orange shading marks the two tails beyond your observed cutoff \(\pm |z|\). That total shaded area
+              is the two-sided p-value.
+            </p>
+            <svg id="act7PSvg" viewBox="0 0 780 220" aria-label="p value tail area under normal null"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">Two-Sided p-value</p>
+                <p class="value"><span id="act7PVal">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Tail Region</p>
+                <p class="value"><span id="act7PTail">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act7PSummary">Move z to see how tail evidence changes.</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 14</p>
+          <h3>One-sided vs two-sided tests.</h3>
+          <p>
+            A two-sided test asks whether the effect differs from zero in either direction. A one-sided test asks only
+            about one pre-specified direction. That choice must be made before seeing the result.
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act7SideSelect"><span>Alternative</span><strong>side</strong></label>
+                <select id="act7SideSelect">
+                  <option value="two">Two-sided (≠)</option>
+                  <option value="right">One-sided (&gt;)</option>
+                  <option value="left">One-sided (&lt;)</option>
+                </select>
+              </div>
+              <div class="act4-control">
+                <label for="act7SideZRange"><span>Observed z</span><strong id="act7SideZVal">1.50</strong></label>
+                <input id="act7SideZRange" type="range" min="-4" max="4" step="0.01" value="1.5" />
+              </div>
+            </div>
+            <p class="quantile-note">
+              The orange shading always shows the rejection-tail definition chosen above: both tails for two-sided,
+              only the right tail for \(>\), only the left tail for \(<\).
+            </p>
+            <svg id="act7SideSvg" viewBox="0 0 780 220" aria-label="one sided versus two sided p value tails"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">p-value</p>
+                <p class="value"><span id="act7SideP">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">Decision Rule (α=0.05)</p>
+                <p class="value"><span id="act7SideRule">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act7SideSummary">Different tail definitions imply different p-values for the same z.</p>
+          </div>
+        </article>
+        <article class="story-card formula-scene">
+          <p class="story-tag">Scene 15</p>
+          <h3>Multiple testing: false discoveries scale fast.</h3>
+          <p>
+            When many hypotheses are tested at once, chance alone will usually make some of them look significant. If
+            all nulls are true and each test uses level \(\alpha\), the expected number of false positives is
+            \(m\alpha\), and the probability of at least one false positive increases quickly with \(m\).
+          </p>
+          <div class="act4-illus">
+            <div class="act4-controls">
+              <div class="act4-control">
+                <label for="act7MultMRange"><span>Number of Tests m</span><strong id="act7MultMVal">20</strong></label>
+                <input id="act7MultMRange" type="range" min="2" max="200" step="1" value="20" />
+              </div>
+              <div class="act4-control">
+                <label for="act7MultAlphaRange"><span>Per-Test α</span><strong id="act7MultAlphaVal">0.05</strong></label>
+                <input id="act7MultAlphaRange" type="range" min="0.005" max="0.2" step="0.005" value="0.05" />
+              </div>
+            </div>
+            <div class="quantile-toolbar">
+              <button id="act7MultRunBtn" type="button">Run One Multiple-Testing Round</button>
+              <p class="quantile-note">Blue dots = non-significant tests, orange dots = false positives under all-null truth.</p>
+            </div>
+            <svg id="act7MultSvg" viewBox="0 0 780 220" aria-label="multiple testing false positive simulation"></svg>
+            <div class="quantile-meta">
+              <div class="quantile-chip">
+                <p class="name">Expected False Positives</p>
+                <p class="value"><span id="act7MultExpected">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">FWER</p>
+                <p class="value"><span id="act7MultFwer">-</span></p>
+              </div>
+              <div class="quantile-chip">
+                <p class="name">False Positives (last run)</p>
+                <p class="value"><span id="act7MultLastFalse">-</span></p>
+              </div>
+            </div>
+            <p class="quantile-note" id="act7MultSummary">Ready to simulate multiple testing under pure null conditions.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="assessment-panel" id="postAssessmentPanel" data-pre-gated="true" hidden>
+        <div class="assessment-head">
+          <p class="act-title">Quiz Time</p>
+          <h2>Let’s check where you stand</h2>
+        </div>
+        <p class="assessment-intro">
+          Before the story begins, answer ten questions about plots, summaries, and inference. The same ten questions
+          return at the end so you can compare where you started with where you finished.
+        </p>
+        <div class="assessment-toolbar">
+          <p class="assessment-summary" id="postAssessmentSummary">Submit once when you are finished.</p>
+        </div>
+        <div id="postAssessmentGrid" class="assessment-grid" aria-label="post assessment questions"></div>
+        <p class="assessment-unlock-note">The same ten questions return at the end as a post-assessment, so the two scores are directly comparable.</p>
+        <div class="assessment-actions end">
+          <button id="postAssessmentNewParticipantBtn" type="button" hidden>Start As New Participant</button>
+          <button id="postAssessmentCheckBtn" type="button">Submit Assessment</button>
+        </div>
+      </section>
+    </main>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        if (window.renderMathInElement) {
+          window.renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "\\(", right: "\\)", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+      });
+    </script>
+    <script src="./main.js?v=20260322-assessment37"></script>
+  </body>
+</html>

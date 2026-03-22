@@ -1,0 +1,11 @@
+{
+  "name": "interactive-blog-assessment-server",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^8.3.0"
+  }
+}
