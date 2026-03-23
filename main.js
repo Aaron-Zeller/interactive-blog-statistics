@@ -2124,6 +2124,47 @@ function getAssessmentQuestionFeedback(questionId, values) {
   }
 }
 
+function getAssessmentCorrectValue(questionId) {
+  switch (questionId) {
+    case "boxplot_normality":
+      return "left_skew";
+    case "pvalue_decision":
+      return "fail";
+    case "assumption_stress_label":
+      return "question_fit";
+    case "summary_vs_shape":
+      return "no_shape";
+    case "ci_alpha_decision":
+      return "no_evidence";
+    case "estimate_bias_check":
+      return "not_concerning";
+    case "test_selection":
+      return "paired_t";
+    case "qq_diagnostic":
+      return "right_heavy";
+    case "multiple_once_realistic":
+      return "yes_realistic";
+    case "skew_center_order":
+      return "mode_median_mean";
+    default:
+      return null;
+  }
+}
+
+function syncAssessmentOptionButtons(phase, questionId, choice) {
+  const buttons = document.querySelectorAll(`#${phase}-${questionId}-options .assessment-option`);
+  const revealCorrect = phase === "post" && assessmentState.submitted.post;
+  const correctValue = getAssessmentCorrectValue(questionId);
+  const highlightedValue = revealCorrect && correctValue ? correctValue : choice;
+
+  buttons.forEach((button) => {
+    button.classList.toggle("selected", button.dataset.value === highlightedValue);
+    button.classList.toggle("revealed-correct", Boolean(revealCorrect && correctValue && button.dataset.value === correctValue));
+  });
+
+  return buttons;
+}
+
 function updateAssessmentQuestion(phase, questionId) {
   const values = assessmentState[phase][questionId];
   const prefix = `${phase}-${questionId}`;
@@ -2133,21 +2174,15 @@ function updateAssessmentQuestion(phase, questionId) {
 
   switch (questionId) {
     case "boxplot_normality": {
-      const buttons = document.querySelectorAll(`#${prefix}-options .assessment-option`);
       drawAssessmentBoxplotNormalityFigure(prefix);
-      buttons.forEach((button) => {
-        button.classList.toggle("selected", button.dataset.value === values.choice);
-      });
+      syncAssessmentOptionButtons(phase, questionId, values.choice);
       readout.innerHTML =
         values.choice ? "Answer selected." : "Use the box, whiskers, and median to judge whether a normal model is plausible.";
       break;
     }
     case "pvalue_decision": {
-      const buttons = document.querySelectorAll(`#${prefix}-options .assessment-option`);
       drawAssessmentPValueDecisionFigure(prefix, question.observedZ);
-      buttons.forEach((button) => {
-        button.classList.toggle("selected", button.dataset.value === values.choice);
-      });
+      syncAssessmentOptionButtons(phase, questionId, values.choice);
       readout.innerHTML =
         values.choice
           ? "Answer selected."
@@ -2155,11 +2190,8 @@ function updateAssessmentQuestion(phase, questionId) {
       break;
     }
     case "assumption_stress_label": {
-      const buttons = document.querySelectorAll(`#${prefix}-options .assessment-option`);
       drawAssessmentAssumptionStressFigure(prefix);
-      buttons.forEach((button) => {
-        button.classList.toggle("selected", button.dataset.value === values.choice);
-      });
+      syncAssessmentOptionButtons(phase, questionId, values.choice);
       readout.innerHTML =
         values.choice
           ? "Answer selected."
@@ -2167,12 +2199,9 @@ function updateAssessmentQuestion(phase, questionId) {
       break;
     }
     case "summary_vs_shape": {
-      const buttons = document.querySelectorAll(`#${prefix}-options .assessment-option`);
       const stats = ASSESSMENT_SUMMARY_SHAPE_STATS;
       drawAssessmentSummaryVsShapeFigure(prefix);
-      buttons.forEach((button) => {
-        button.classList.toggle("selected", button.dataset.value === values.choice);
-      });
+      syncAssessmentOptionButtons(phase, questionId, values.choice);
       readout.innerHTML =
         `Summaries: <strong>x̄ = ${fmtNum(stats.meanX, 1)}</strong>, <strong>ȳ = ${fmtNum(stats.meanY, 1)}</strong>, ` +
         `<strong>s²x = ${fmtNum(stats.varX, 1)}</strong>, <strong>s²y = ${fmtNum(stats.varY, 1)}</strong>, ` +
@@ -2180,11 +2209,8 @@ function updateAssessmentQuestion(phase, questionId) {
       break;
     }
     case "ci_alpha_decision": {
-      const buttons = document.querySelectorAll(`#${prefix}-options .assessment-option`);
       drawAssessmentCiAlphaDecisionFigure(prefix);
-      buttons.forEach((button) => {
-        button.classList.toggle("selected", button.dataset.value === values.choice);
-      });
+      syncAssessmentOptionButtons(phase, questionId, values.choice);
       readout.innerHTML =
         `Current 95% CI: <strong>[${question.ciLo > 0 ? "+" : ""}${fmtNum(question.ciLo, 2)} pp, ${question.ciHi > 0 ? "+" : ""}${fmtNum(question.ciHi, 2)} pp]</strong>.`;
       break;
@@ -2201,57 +2227,42 @@ function updateAssessmentQuestion(phase, questionId) {
       break;
     }
     case "estimate_bias_check": {
-      const buttons = document.querySelectorAll(`#${prefix}-options .assessment-option`);
       const summary = drawAssessmentEstimateBiasFigure(prefix);
-      buttons.forEach((button) => {
-        button.classList.toggle("selected", button.dataset.value === values.choice);
-      });
+      syncAssessmentOptionButtons(phase, questionId, values.choice);
       readout.innerHTML = summary
         ? `True slope: <strong>${fmtNum(ASSESSMENT_SLOPE_DIST_SAMPLE.trueSlope, 3)}</strong>. Average estimate: <strong>${fmtNum(summary.avg, 3)}</strong>.`
         : "Inspect the distance between the orange true slope and the blue dashed average estimate.";
       break;
     }
     case "test_selection": {
-      const buttons = document.querySelectorAll(`#${prefix}-options .assessment-option`);
       const labels = {
         one_t: "one-sample t-test",
         paired_t: "paired t-test",
         two_t: "Welch two-sample t-test",
         z: "z-test",
       };
-      buttons.forEach((button) => {
-        button.classList.toggle("selected", button.dataset.value === values.choice);
-      });
+      syncAssessmentOptionButtons(phase, questionId, values.choice);
       readout.innerHTML =
         values.choice ? `Selected test: <strong>${labels[values.choice]}</strong>.` : "Choose the test that matches a paired design with unknown variance.";
       break;
     }
     case "qq_diagnostic": {
-      const buttons = document.querySelectorAll(`#${prefix}-options .assessment-option`);
       drawAssessmentQqDiagnosticFigure(prefix);
-      buttons.forEach((button) => {
-        button.classList.toggle("selected", button.dataset.value === values.choice);
-      });
+      syncAssessmentOptionButtons(phase, questionId, values.choice);
       readout.innerHTML =
         values.choice ? "Answer selected." : "Choose the best interpretation of the upper-tail deviation from the diagonal.";
       break;
     }
     case "multiple_once_realistic": {
-      const buttons = document.querySelectorAll(`#${prefix}-options .assessment-option`);
       drawAssessmentMultipleObservedFigure(prefix, question.m, question.observedFalse);
-      buttons.forEach((button) => {
-        button.classList.toggle("selected", button.dataset.value === values.choice);
-      });
+      syncAssessmentOptionButtons(phase, questionId, values.choice);
       readout.innerHTML =
         `${fmtInt(question.observedFalse)} of ${fmtInt(question.m)} tests turned orange in one run at <strong>alpha = ${fmtNum(question.alpha, 2)}</strong>.`;
       break;
     }
     case "skew_center_order": {
-      const buttons = document.querySelectorAll(`#${prefix}-options .assessment-option`);
       drawAssessmentSkewCenterOrderFigure(prefix);
-      buttons.forEach((button) => {
-        button.classList.toggle("selected", button.dataset.value === values.choice);
-      });
+      syncAssessmentOptionButtons(phase, questionId, values.choice);
       readout.innerHTML =
         values.choice ? "Answer selected." : "Read the right tail carefully and decide which summary is pulled furthest to the right.";
       break;
