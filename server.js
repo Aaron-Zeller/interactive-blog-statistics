@@ -71,9 +71,11 @@ function createEmptyRecord(userId, now = new Date().toISOString()) {
     updatedAt: now,
     preScore: null,
     preTotal: null,
+    preCorrect: null,
     preSavedAt: null,
     postScore: null,
     postTotal: null,
+    postCorrect: null,
     postSavedAt: null,
   };
 }
@@ -95,9 +97,11 @@ function normalizePostgresRow(row) {
     updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
     preScore: row.pre_score,
     preTotal: row.pre_total,
+    preCorrect: Array.isArray(row.pre_correct) ? row.pre_correct : null,
     preSavedAt: row.pre_saved_at ? new Date(row.pre_saved_at).toISOString() : null,
     postScore: row.post_score,
     postTotal: row.post_total,
+    postCorrect: Array.isArray(row.post_correct) ? row.post_correct : null,
     postSavedAt: row.post_saved_at ? new Date(row.post_saved_at).toISOString() : null,
   });
 }
@@ -110,12 +114,16 @@ async function ensurePostgresTable() {
       updated_at TIMESTAMPTZ NOT NULL,
       pre_score INTEGER,
       pre_total INTEGER,
+      pre_correct JSONB,
       pre_saved_at TIMESTAMPTZ,
       post_score INTEGER,
       post_total INTEGER,
+      post_correct JSONB,
       post_saved_at TIMESTAMPTZ
     )
   `);
+  await pgPool.query(`ALTER TABLE ${POSTGRES_TABLE} ADD COLUMN IF NOT EXISTS pre_correct JSONB`);
+  await pgPool.query(`ALTER TABLE ${POSTGRES_TABLE} ADD COLUMN IF NOT EXISTS post_correct JSONB`);
 }
 
 async function ensureStorageReady() {
@@ -162,17 +170,19 @@ async function saveAssessmentRecord(record) {
     `
       INSERT INTO ${POSTGRES_TABLE} (
         user_id, created_at, updated_at,
-        pre_score, pre_total, pre_saved_at,
-        post_score, post_total, post_saved_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        pre_score, pre_total, pre_correct, pre_saved_at,
+        post_score, post_total, post_correct, post_saved_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       ON CONFLICT (user_id) DO UPDATE SET
         created_at = EXCLUDED.created_at,
         updated_at = EXCLUDED.updated_at,
         pre_score = EXCLUDED.pre_score,
         pre_total = EXCLUDED.pre_total,
+        pre_correct = EXCLUDED.pre_correct,
         pre_saved_at = EXCLUDED.pre_saved_at,
         post_score = EXCLUDED.post_score,
         post_total = EXCLUDED.post_total,
+        post_correct = EXCLUDED.post_correct,
         post_saved_at = EXCLUDED.post_saved_at
     `,
     [
@@ -181,9 +191,11 @@ async function saveAssessmentRecord(record) {
       record.updatedAt,
       record.preScore,
       record.preTotal,
+      record.preCorrect ? JSON.stringify(record.preCorrect) : null,
       record.preSavedAt,
       record.postScore,
       record.postTotal,
+      record.postCorrect ? JSON.stringify(record.postCorrect) : null,
       record.postSavedAt,
     ]
   );
@@ -230,9 +242,11 @@ function toCsv(records) {
     "updatedAt",
     "preScore",
     "preTotal",
+    "preCorrect",
     "preSavedAt",
     "postScore",
     "postTotal",
+    "postCorrect",
     "postSavedAt",
   ];
   const escape = (value) => {
@@ -249,9 +263,11 @@ function toCsv(records) {
         record.updatedAt,
         record.preScore,
         record.preTotal,
+        record.preCorrect ? JSON.stringify(record.preCorrect) : "",
         record.preSavedAt,
         record.postScore,
         record.postTotal,
+        record.postCorrect ? JSON.stringify(record.postCorrect) : "",
         record.postSavedAt,
       ]
         .map(escape)
@@ -298,7 +314,8 @@ async function handleAssessmentPost(req, res) {
   try {
     const rawBody = await readRequestBody(req);
     const body = rawBody ? JSON.parse(rawBody) : {};
-    const { userId, phase, score, total } = body;
+    const { userId, phase, score, total, correctness } = body;
+    const correctnessArray = Array.isArray(correctness) ? correctness.map((value) => Boolean(value)) : null;
 
     if (!userId || (phase !== "pre" && phase !== "post") || !Number.isFinite(score)) {
       sendJson(res, 400, { error: "Invalid assessment payload" });
@@ -319,6 +336,7 @@ async function handleAssessmentPost(req, res) {
       }
       record.preScore = score;
       record.preTotal = Number.isFinite(total) ? total : record.preTotal;
+      record.preCorrect = correctnessArray;
       record.preSavedAt = now;
     } else {
       if (record.postSavedAt) {
@@ -327,6 +345,7 @@ async function handleAssessmentPost(req, res) {
       }
       record.postScore = score;
       record.postTotal = Number.isFinite(total) ? total : record.postTotal;
+      record.postCorrect = correctnessArray;
       record.postSavedAt = now;
     }
     record.updatedAt = now;
