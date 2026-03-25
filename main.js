@@ -510,7 +510,9 @@ const ASSESSMENT_QUESTIONS = [
   {
     id: "summary_vs_shape",
     title: "Do the summaries determine the shape?",
-    prompt: "Suppose you were only given these summary statistics. Would they be enough to conclude that the data look roughly like this straight-line cloud around the fitted line?",
+    prompt:
+      "Suppose you were only given the following summary statistics. Would they be enough to conclude that the data look roughly like this straight-line cloud around the fitted line?" +
+      '<span class="assessment-summary-math">\\(\\bar{x} = 49.3\\), \\(\\bar{y} = 56.0\\), \\(s_x^2 = 619.8\\), \\(s_y^2 = 279.6\\), \\(r = 0.933\\), \\(\\text{slope} = 0.627\\)</span>',
     defaults: { choice: "" },
   },
   {
@@ -2124,6 +2126,17 @@ function getAssessmentQuestionFeedback(questionId, values) {
   }
 }
 
+function renderMathIfAvailable(root) {
+  if (!root || !window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [
+      { left: "$$", right: "$$", display: true },
+      { left: "\\(", right: "\\)", display: false },
+    ],
+    throwOnError: false,
+  });
+}
+
 function getAssessmentCorrectValue(questionId) {
   switch (questionId) {
     case "boxplot_normality":
@@ -2369,6 +2382,7 @@ function renderAssessmentPhase(phase) {
   }
 
   mount.innerHTML = ASSESSMENT_QUESTIONS.map((question, index) => buildAssessmentQuestionHtml(phase, question, index)).join("");
+  renderMathIfAvailable(mount);
 
   ASSESSMENT_QUESTIONS.forEach((question) => {
     switch (question.id) {
