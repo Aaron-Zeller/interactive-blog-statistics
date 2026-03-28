@@ -283,7 +283,6 @@ const els = {
   preAssessmentPanel: document.getElementById("preAssessmentPanel"),
   preAssessmentGrid: document.getElementById("preAssessmentGrid"),
   preAssessmentSummary: document.getElementById("preAssessmentSummary"),
-  preAssessmentNewParticipantBtn: document.getElementById("preAssessmentNewParticipantBtn"),
   preAssessmentCheckBtn: document.getElementById("preAssessmentCheckBtn"),
   postAssessmentPanel: document.getElementById("postAssessmentPanel"),
   postAssessmentGrid: document.getElementById("postAssessmentGrid"),
@@ -2570,7 +2569,7 @@ function updateAssessmentSummary(phase) {
 
   if (phase === "pre") {
     summaryNode.textContent = assessmentState.restoredFromSavedRecord.pre
-      ? "This browser already has a saved pre-assessment, so the acts are already unlocked. Use “Start As New Participant” to test the locked flow again."
+      ? "This browser already has a saved pre-assessment, so the acts are already unlocked."
       : "Pre-assessment submitted and saved. The answers stay hidden for now, and the acts are now unlocked.";
     return;
   }
@@ -2599,9 +2598,6 @@ function updatePreUnlockState() {
   guidedSections.forEach((section) => {
     section.hidden = !unlocked;
   });
-  if (els.preAssessmentNewParticipantBtn) {
-    els.preAssessmentNewParticipantBtn.hidden = !assessmentState.restoredFromSavedRecord.pre;
-  }
   if (unlocked) {
     ensureGuidedStageChrome();
     renderAssessmentPhase("post");
@@ -2847,16 +2843,6 @@ async function loadExistingAssessmentRecord() {
   }
 }
 
-function startNewAssessmentParticipant() {
-  try {
-    window.localStorage.removeItem(ASSESSMENT_USER_KEY);
-    window.localStorage.removeItem(ASSESSMENT_STAGE_KEY);
-  } catch (err) {
-    // Ignore localStorage issues and still refresh.
-  }
-  window.location.reload();
-}
-
 async function initAssessments() {
   if (!els.preAssessmentGrid && !els.postAssessmentGrid) return;
 
@@ -2875,11 +2861,6 @@ async function initAssessments() {
   if (els.preAssessmentCheckBtn) {
     els.preAssessmentCheckBtn.addEventListener("click", () => {
       void submitAssessmentPhase("pre");
-    });
-  }
-  if (els.preAssessmentNewParticipantBtn) {
-    els.preAssessmentNewParticipantBtn.addEventListener("click", () => {
-      startNewAssessmentParticipant();
     });
   }
   if (els.postAssessmentCheckBtn) {
