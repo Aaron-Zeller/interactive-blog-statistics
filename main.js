@@ -280,10 +280,12 @@ const els = {
   act7MultLastFalse: document.getElementById("act7MultLastFalse"),
   act7MultSummary: document.getElementById("act7MultSummary"),
 
+  preAssessmentPanel: document.getElementById("preAssessmentPanel"),
   preAssessmentGrid: document.getElementById("preAssessmentGrid"),
   preAssessmentSummary: document.getElementById("preAssessmentSummary"),
   preAssessmentNewParticipantBtn: document.getElementById("preAssessmentNewParticipantBtn"),
   preAssessmentCheckBtn: document.getElementById("preAssessmentCheckBtn"),
+  postAssessmentPanel: document.getElementById("postAssessmentPanel"),
   postAssessmentGrid: document.getElementById("postAssessmentGrid"),
   postAssessmentSummary: document.getElementById("postAssessmentSummary"),
   postAssessmentCheckBtn: document.getElementById("postAssessmentCheckBtn"),
@@ -478,7 +480,17 @@ const assessmentState = {
   },
 };
 
+const assessmentUiState = {
+  pre: {},
+  post: {},
+  lastScrollY: 0,
+  scrollBound: false,
+  autoCollapseTimer: null,
+  lastScrollDirection: "idle",
+};
+
 const ASSESSMENT_USER_KEY = "statsBlogAssessmentUserId";
+const ASSESSMENT_STAGE_KEY = "statsBlogAssessmentStageIndex";
 
 const ASSESSMENT_QUESTIONS = [
   {
@@ -549,7 +561,7 @@ const ASSESSMENT_QUESTIONS = [
   {
     id: "skew_center_order",
     title: "Order the three centres",
-    prompt: "This is the right-skewed money_spent distribution from Act 2, Scene 3. From left to right, in what order do mode, median, and mean appear?",
+    prompt: "Take a look at the distribution. From left to right, in what order do mode, median, and mean appear?",
     defaults: { choice: "" },
   },
 ];
@@ -932,6 +944,249 @@ function cloneAssessmentDefaults() {
     next[question.id] = { ...question.defaults };
   });
   return next;
+}
+
+function cloneAssessmentUiDefaults() {
+  const next = {};
+  ASSESSMENT_QUESTIONS.forEach((question) => {
+    next[question.id] = {
+      collapsed: false,
+      pinnedOpen: false,
+    };
+  });
+  return next;
+}
+
+function getStoredAssessmentStageIndex() {
+  try {
+    const raw = window.localStorage.getItem(ASSESSMENT_STAGE_KEY);
+    if (raw === null) return 0;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
+  } catch (err) {
+    return 0;
+  }
+}
+
+function setStoredAssessmentStageIndex(index) {
+  try {
+    window.localStorage.setItem(ASSESSMENT_STAGE_KEY, String(index));
+  } catch (err) {
+    // Ignore storage issues and keep the guided flow usable.
+  }
+}
+
+function getGuidedSections() {
+  return Array.from(document.querySelectorAll("[data-pre-gated]"));
+}
+
+function getGuidedSectionLabel(section, index) {
+  if (!section) return `Section ${index + 1}`;
+  if (section.id === "postAssessmentPanel") return "Post-assessment";
+  const title = section.querySelector(".act-title");
+  return title?.textContent?.trim() || `Section ${index + 1}`;
+}
+
+function ensureGuidedStageChrome() {
+  const sections = getGuidedSections();
+  sections.forEach((section, index) => {
+    let nav = section.querySelector(".guided-stage-nav");
+    if (!nav) {
+      nav = document.createElement("div");
+      nav.className = "guided-stage-nav";
+      nav.innerHTML = `
+        <div class="guided-stage-progress"></div>
+        <div class="guided-stage-actions">
+          <button type="button" class="guided-stage-btn secondary" data-guided-nav="prev">Previous Section</button>
+          <button type="button" class="guided-stage-btn primary" data-guided-nav="next">Continue</button>
+        </div>
+      `;
+      section.appendChild(nav);
+    }
+
+    const progress = nav.querySelector(".guided-stage-progress");
+    const prevBtn = nav.querySelector('[data-guided-nav="prev"]');
+    const nextBtn = nav.querySelector('[data-guided-nav="next"]');
+    if (progress) {
+      progress.textContent = `Section ${index + 1} of ${sections.length}: ${getGuidedSectionLabel(section, index)}`;
+    }
+    if (prevBtn) {
+      prevBtn.hidden = index === 0;
+      prevBtn.onclick = () => setActiveGuidedStage(index - 1);
+    }
+    if (nextBtn) {
+      const isLast = index === sections.length - 1;
+      if (isLast) {
+        nextBtn.remove();
+      } else {
+        nextBtn.hidden = false;
+        nextBtn.textContent = `Continue to ${getGuidedSectionLabel(sections[index + 1], index + 1)}`;
+        nextBtn.disabled = false;
+        nextBtn.onclick = () => setActiveGuidedStage(index + 1);
+      }
+    }
+  });
+}
+
+function setActiveGuidedStage(index, options = {}) {
+  const sections = getGuidedSections();
+  if (!sections.length) return;
+  const nextIndex = Math.max(0, Math.min(index, sections.length - 1));
+
+  sections.forEach((section, sectionIndex) => {
+    section.hidden = sectionIndex !== nextIndex;
+    section.classList.toggle("guided-stage-active", sectionIndex === nextIndex);
+  });
+
+  setStoredAssessmentStageIndex(nextIndex);
+
+  const activeSection = sections[nextIndex];
+  if (activeSection && options.scroll !== false) {
+    activeSection.scrollIntoView({ behavior: options.behavior || "smooth", block: "start" });
+  }
+
+  window.requestAnimationFrame(() => {
+    redrawResponsiveVisualsAfterLayout();
+  });
+}
+
+function getAssessmentCardAnswered(values) {
+  if (!values) return false;
+  if (typeof values.choice === "string") return values.choice.trim() !== "";
+  return false;
+}
+
+function getAssessmentCardUi(phase, questionId) {
+  if (!assessmentUiState[phase] || !assessmentUiState[phase][questionId]) {
+    if (!assessmentUiState[phase]) assessmentUiState[phase] = {};
+    assessmentUiState[phase][questionId] = {
+      collapsed: false,
+      pinnedOpen: false,
+    };
+  }
+  return assessmentUiState[phase][questionId];
+}
+
+function syncAssessmentCardUi(phase, questionId) {
+  const prefix = `${phase}-${questionId}`;
+  const card = document.getElementById(`${prefix}-card`);
+  if (!card) return;
+  const toggle = document.getElementById(`${prefix}-toggle`);
+  const note = document.getElementById(`${prefix}-collapsed-note`);
+  const values = assessmentState[phase][questionId];
+  const answered = getAssessmentCardAnswered(values);
+  const ui = getAssessmentCardUi(phase, questionId);
+
+  card.classList.toggle("is-collapsed", ui.collapsed);
+  card.classList.toggle("is-answered", answered);
+
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", String(!ui.collapsed));
+    toggle.setAttribute("aria-label", ui.collapsed ? "Expand question" : "Collapse question");
+    toggle.innerHTML = ui.collapsed ? "&#43;" : "&#8722;";
+    toggle.classList.toggle("is-collapsed", ui.collapsed);
+  }
+
+  if (note) {
+    if (ui.collapsed) {
+      note.textContent = answered ? "Answered. Click the icon to reopen." : "Collapsed. Click the icon to reopen.";
+    } else {
+      note.textContent = "";
+    }
+  }
+}
+
+function setAssessmentCardCollapsed(phase, questionId, collapsed, options = {}) {
+  const prefix = `${phase}-${questionId}`;
+  const card = document.getElementById(`${prefix}-card`);
+  const heightBefore = card ? card.offsetHeight : 0;
+  const ui = getAssessmentCardUi(phase, questionId);
+  ui.collapsed = collapsed;
+  if (options.pinnedOpen !== undefined) {
+    ui.pinnedOpen = options.pinnedOpen;
+  }
+  syncAssessmentCardUi(phase, questionId);
+  if (!card) return 0;
+  const heightAfter = card.offsetHeight;
+  return heightBefore - heightAfter;
+}
+
+function shouldAutoCollapseAssessmentCard(card) {
+  const rect = card.getBoundingClientRect();
+  return rect.bottom < -18;
+}
+
+function getAssessmentScrollAnchor() {
+  const cards = Array.from(document.querySelectorAll(".assessment-card"));
+  for (const card of cards) {
+    const rect = card.getBoundingClientRect();
+    if (rect.bottom > 0 && rect.top < window.innerHeight) {
+      return {
+        id: card.id,
+        top: rect.top,
+      };
+    }
+  }
+  return null;
+}
+
+function runAssessmentAutoCollapseCheck() {
+  if (assessmentUiState.lastScrollDirection !== "down") return;
+  const anchor = getAssessmentScrollAnchor();
+  let collapsedAny = false;
+
+  ["pre", "post"].forEach((phase) => {
+    document.querySelectorAll(`#${phase}AssessmentGrid .assessment-card`).forEach((card) => {
+      const questionId = card.dataset.questionId;
+      if (!questionId) return;
+      const values = assessmentState[phase]?.[questionId];
+      const ui = getAssessmentCardUi(phase, questionId);
+      if (!getAssessmentCardAnswered(values) || ui.collapsed || ui.pinnedOpen) return;
+      if (shouldAutoCollapseAssessmentCard(card)) {
+        setAssessmentCardCollapsed(phase, questionId, true);
+        collapsedAny = true;
+      }
+    });
+  });
+
+  if (collapsedAny && anchor) {
+    const anchorNode = document.getElementById(anchor.id);
+    if (anchorNode) {
+      const delta = anchorNode.getBoundingClientRect().top - anchor.top;
+      if (Math.abs(delta) > 0.5) {
+        window.scrollBy(0, delta);
+        assessmentUiState.lastScrollY += delta;
+      }
+    }
+  }
+}
+
+function queueAssessmentAutoCollapseCheck() {
+  const currentScrollY = window.scrollY || window.pageYOffset || 0;
+  if (currentScrollY > assessmentUiState.lastScrollY + 2) {
+    assessmentUiState.lastScrollDirection = "down";
+  } else if (currentScrollY < assessmentUiState.lastScrollY - 2) {
+    assessmentUiState.lastScrollDirection = "up";
+  } else {
+    assessmentUiState.lastScrollDirection = "idle";
+  }
+  assessmentUiState.lastScrollY = currentScrollY;
+
+  if (assessmentUiState.autoCollapseTimer) {
+    window.clearTimeout(assessmentUiState.autoCollapseTimer);
+  }
+
+  assessmentUiState.autoCollapseTimer = window.setTimeout(() => {
+    assessmentUiState.autoCollapseTimer = null;
+    runAssessmentAutoCollapseCheck();
+  }, 160);
+}
+
+function ensureAssessmentScrollBinding() {
+  if (assessmentUiState.scrollBound || typeof window === "undefined") return;
+  assessmentUiState.scrollBound = true;
+  assessmentUiState.lastScrollY = window.scrollY || window.pageYOffset || 0;
+  window.addEventListener("scroll", queueAssessmentAutoCollapseCheck, { passive: true });
 }
 
 function buildAssessmentFigureHtml(phase, question) {
@@ -1941,7 +2196,7 @@ function buildAssessmentQuestionHtml(phase, question, index) {
         <div class="assessment-option-list" id="${prefix}-options" role="group" aria-label="test selection options">
           <button type="button" class="assessment-option" data-value="one_t">One-sample t-test</button>
           <button type="button" class="assessment-option" data-value="paired_t">Paired t-test</button>
-          <button type="button" class="assessment-option" data-value="two_t">Welch two-sample t-test</button>
+          <button type="button" class="assessment-option" data-value="two_t">Two-sample t-test</button>
           <button type="button" class="assessment-option" data-value="z">z-test</button>
         </div>
       `;
@@ -1985,13 +2240,19 @@ function buildAssessmentQuestionHtml(phase, question, index) {
   }
 
   return `
-    <article class="assessment-card" id="${prefix}-card">
-      <p class="story-tag">Question ${index + 1}</p>
-      <h3>${question.title}</h3>
-      <p class="assessment-goal">${question.prompt}</p>
-      <div class="assessment-widget">${widget}</div>
-      <div class="assessment-readout" id="${prefix}-readout"></div>
-      <p class="assessment-status" id="${prefix}-status">Choose your answer, then submit the assessment when you are ready.</p>
+    <article class="assessment-card" id="${prefix}-card" data-phase="${phase}" data-question-id="${question.id}">
+      <button type="button" class="assessment-collapse-toggle" id="${prefix}-toggle" aria-expanded="true" aria-label="Collapse question">&#8722;</button>
+      <div class="assessment-card-head">
+        <p class="story-tag">Question ${index + 1}</p>
+        <h3>${question.title}</h3>
+        <p class="assessment-collapsed-note" id="${prefix}-collapsed-note"></p>
+      </div>
+      <div class="assessment-card-body">
+        <p class="assessment-goal">${question.prompt}</p>
+        <div class="assessment-widget">${widget}</div>
+        <div class="assessment-readout" id="${prefix}-readout"></div>
+        <p class="assessment-status" id="${prefix}-status">Choose your answer, then submit the assessment when you are ready.</p>
+      </div>
     </article>
   `;
 }
@@ -2086,7 +2347,7 @@ function getAssessmentQuestionFeedback(questionId, values) {
             : values.choice === "paired_t"
             ? "Correct. The design is paired, so the test should be based on within-user differences, using a t distribution because the population variance is unknown."
             : values.choice === "two_t"
-            ? "Not quite. Welch's two-sample t-test is for independent groups, but here the same users are measured twice."
+            ? "Not quite. A two-sample t-test is for independent groups, but here the same users are measured twice."
             : "Not quite. This is not a one-sample setup, and there is no known population variance for a z-test.",
       };
     case "qq_diagnostic":
@@ -2251,7 +2512,7 @@ function updateAssessmentQuestion(phase, questionId) {
       const labels = {
         one_t: "one-sample t-test",
         paired_t: "paired t-test",
-        two_t: "Welch two-sample t-test",
+        two_t: "Two-sample t-test",
         z: "z-test",
       };
       syncAssessmentOptionButtons(phase, questionId, values.choice);
@@ -2283,6 +2544,8 @@ function updateAssessmentQuestion(phase, questionId) {
     default:
       break;
   }
+
+  syncAssessmentCardUi(phase, questionId);
 }
 
 function updateAssessmentSummary(phase) {
@@ -2329,15 +2592,23 @@ function updateAssessmentSummary(phase) {
 
 function updatePreUnlockState() {
   const unlocked = assessmentState.submitted.pre;
-  document.querySelectorAll("[data-pre-gated]").forEach((section) => {
+  if (els.preAssessmentPanel) {
+    els.preAssessmentPanel.hidden = unlocked;
+  }
+  const guidedSections = getGuidedSections();
+  guidedSections.forEach((section) => {
     section.hidden = !unlocked;
   });
   if (els.preAssessmentNewParticipantBtn) {
     els.preAssessmentNewParticipantBtn.hidden = !assessmentState.restoredFromSavedRecord.pre;
   }
   if (unlocked) {
+    ensureGuidedStageChrome();
     renderAssessmentPhase("post");
-    redrawResponsiveVisualsAfterLayout();
+    const savedIndex = Math.min(getStoredAssessmentStageIndex(), Math.max(0, guidedSections.length - 1));
+    setActiveGuidedStage(savedIndex, { scroll: false });
+  } else {
+    setStoredAssessmentStageIndex(0);
   }
 }
 
@@ -2345,6 +2616,7 @@ function setAssessmentPhaseDisabled(phase, disabled) {
   const mount = phase === "pre" ? els.preAssessmentGrid : els.postAssessmentGrid;
   if (mount) {
     mount.querySelectorAll("input, select, button, textarea").forEach((node) => {
+      if (node.classList.contains("assessment-collapse-toggle")) return;
       node.disabled = disabled;
     });
   }
@@ -2369,8 +2641,24 @@ function bindAssessmentOptionButtons(phase, questionId) {
   document.querySelectorAll(`#${phase}-${questionId}-options .assessment-option`).forEach((button) => {
     button.addEventListener("click", () => {
       assessmentState[phase][questionId].choice = button.dataset.value || "";
+      const ui = getAssessmentCardUi(phase, questionId);
+      ui.collapsed = false;
+      ui.pinnedOpen = false;
       updateAssessmentQuestion(phase, questionId);
     });
+  });
+}
+
+function bindAssessmentCollapseToggle(phase, questionId) {
+  const toggle = document.getElementById(`${phase}-${questionId}-toggle`);
+  if (!toggle) return;
+  toggle.addEventListener("click", () => {
+    const ui = getAssessmentCardUi(phase, questionId);
+    if (ui.collapsed) {
+      setAssessmentCardCollapsed(phase, questionId, false, { pinnedOpen: true });
+    } else {
+      setAssessmentCardCollapsed(phase, questionId, true, { pinnedOpen: false });
+    }
   });
 }
 
@@ -2380,11 +2668,15 @@ function renderAssessmentPhase(phase) {
   if (!assessmentState[phase] || !Object.keys(assessmentState[phase]).length) {
     assessmentState[phase] = cloneAssessmentDefaults();
   }
+  if (!assessmentUiState[phase] || !Object.keys(assessmentUiState[phase]).length) {
+    assessmentUiState[phase] = cloneAssessmentUiDefaults();
+  }
 
   mount.innerHTML = ASSESSMENT_QUESTIONS.map((question, index) => buildAssessmentQuestionHtml(phase, question, index)).join("");
   renderMathIfAvailable(mount);
 
   ASSESSMENT_QUESTIONS.forEach((question) => {
+    bindAssessmentCollapseToggle(phase, question.id);
     switch (question.id) {
       case "boxplot_normality":
         bindAssessmentOptionButtons(phase, question.id);
@@ -2523,10 +2815,7 @@ async function submitAssessmentPhase(phase) {
   setAssessmentPhaseDisabled(phase, true);
   if (phase === "pre") {
     updatePreUnlockState();
-    const firstUnlockedSection = document.querySelector("[data-pre-gated]");
-    if (firstUnlockedSection) {
-      firstUnlockedSection.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    setActiveGuidedStage(getStoredAssessmentStageIndex(), { behavior: "smooth" });
   }
   updateAssessmentSummary(phase);
 }
@@ -2561,6 +2850,7 @@ async function loadExistingAssessmentRecord() {
 function startNewAssessmentParticipant() {
   try {
     window.localStorage.removeItem(ASSESSMENT_USER_KEY);
+    window.localStorage.removeItem(ASSESSMENT_STAGE_KEY);
   } catch (err) {
     // Ignore localStorage issues and still refresh.
   }
@@ -2573,6 +2863,9 @@ async function initAssessments() {
   assessmentState.userId = getOrCreateAssessmentUserId();
   assessmentState.pre = cloneAssessmentDefaults();
   assessmentState.post = cloneAssessmentDefaults();
+  assessmentUiState.pre = cloneAssessmentUiDefaults();
+  assessmentUiState.post = cloneAssessmentUiDefaults();
+  ensureAssessmentScrollBinding();
   await loadExistingAssessmentRecord();
   renderAssessmentPhase("pre");
   updatePreUnlockState();

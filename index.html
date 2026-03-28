@@ -126,11 +126,12 @@
       }
 
       .act-title {
-        margin: 0 0 0.55rem;
+        display: block;
+        margin: 0 0 0.9rem;
         text-transform: uppercase;
-        letter-spacing: 0.11em;
-        font-size: 0.74rem;
-        font-weight: 800;
+        letter-spacing: 0.15em;
+        font-size: 0.98rem;
+        font-weight: 900;
         color: var(--accent-2);
       }
 
@@ -184,12 +185,18 @@
       }
 
       .story-tag {
-        margin: 0 0 0.55rem;
-        font-size: 0.72rem;
+        display: inline-flex;
+        align-items: center;
+        margin: 0 0 0.65rem;
+        padding: 0.32rem 0.58rem;
+        border-radius: 999px;
+        border: none;
+        background: rgba(86, 180, 233, 0.12);
+        font-size: 0.74rem;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        font-weight: 700;
-        color: var(--accent-2);
+        letter-spacing: 0.11em;
+        font-weight: 900;
+        color: #2f5a75;
       }
 
       .story-card h3 {
@@ -1858,6 +1865,64 @@
         gap: 1rem;
       }
 
+      .guided-stage-nav {
+        margin-top: 1.4rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(84, 119, 141, 0.14);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.9rem;
+        flex-wrap: wrap;
+      }
+
+      .guided-stage-progress {
+        color: #36586f;
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+
+      .guided-stage-actions {
+        display: flex;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .guided-stage-btn {
+        border-radius: 999px;
+        border: 1px solid #cfe0e9;
+        padding: 0.7rem 1rem;
+        background: #ffffff;
+        color: #1d4c66;
+        font: inherit;
+        line-height: 1.1;
+        cursor: pointer;
+        transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, color 160ms ease;
+      }
+
+      .guided-stage-btn:hover:not(:disabled) {
+        border-color: #9dc6df;
+        box-shadow: 0 8px 18px rgba(19, 54, 76, 0.08);
+        transform: translateY(-1px);
+      }
+
+      .guided-stage-btn:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      .guided-stage-btn.primary {
+        border-color: rgba(213, 94, 0, 0.25);
+        background: rgba(255, 248, 238, 0.94);
+        color: #a14a0d;
+      }
+
+      .guided-stage-btn.secondary {
+        background: #f7fbff;
+        color: #36586f;
+      }
+
       .assessment-card {
         position: relative;
         border: 1px solid #d7e3ea;
@@ -1869,6 +1934,14 @@
         box-shadow: 0 10px 22px rgba(19, 54, 76, 0.06);
       }
 
+      .assessment-card-head {
+        padding-right: 2.75rem;
+      }
+
+      .assessment-card-body {
+        margin-top: 0.08rem;
+      }
+
       .assessment-card::before {
         content: "";
         position: absolute;
@@ -1878,6 +1951,39 @@
         width: 4px;
         border-radius: 4px;
         background: linear-gradient(180deg, #56b4e9 0%, #009e73 100%);
+      }
+
+      .assessment-collapse-toggle {
+        position: absolute;
+        top: 0.78rem;
+        right: 0.78rem;
+        width: 2rem;
+        height: 2rem;
+        border: 1px solid #d3e1ea;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #42657c;
+        font: inherit;
+        font-size: 1.15rem;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+      }
+
+      .assessment-collapse-toggle:hover {
+        border-color: #9dc6df;
+        color: #1f4b63;
+        box-shadow: 0 6px 16px rgba(19, 54, 76, 0.08);
+        transform: translateY(-1px);
+      }
+
+      .assessment-collapse-toggle:focus-visible {
+        outline: none;
+        border-color: #d55e00;
+        box-shadow: 0 0 0 3px rgba(213, 94, 0, 0.14);
       }
 
       .assessment-card h3 {
@@ -1894,6 +2000,13 @@
       .assessment-goal {
         font-size: 0.95rem;
         min-height: 0;
+      }
+
+      .assessment-collapsed-note {
+        display: none;
+        margin-top: 0.38rem;
+        font-size: 0.82rem;
+        color: #527086;
       }
 
       .assessment-summary-math {
@@ -2025,6 +2138,23 @@
         background: #f8fbff;
         box-shadow: none;
         overflow: hidden;
+      }
+
+      .assessment-card.is-collapsed {
+        padding-bottom: 0.85rem;
+      }
+
+      .assessment-card.is-collapsed .assessment-card-body {
+        display: none;
+      }
+
+      .assessment-card.is-collapsed .assessment-collapsed-note {
+        display: block;
+      }
+
+      .assessment-card.is-collapsed .assessment-collapse-toggle {
+        color: #d55e00;
+        border-color: rgba(213, 94, 0, 0.3);
       }
 
       canvas {
@@ -2207,6 +2337,16 @@
 
         .assessment-grid {
           grid-template-columns: 1fr;
+        }
+
+        .guided-stage-nav {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .guided-stage-actions {
+          width: 100%;
+          justify-content: flex-start;
         }
 
         .mini-table {
