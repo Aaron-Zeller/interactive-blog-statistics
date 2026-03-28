@@ -976,12 +976,16 @@ function setStoredAssessmentStageIndex(index) {
 }
 
 function getGuidedSections() {
-  return Array.from(document.querySelectorAll("[data-pre-gated]"));
+  return Array.from(document.querySelectorAll("[data-pre-gated]")).filter((section) => {
+    if (section.hasAttribute("data-requires-post") && !assessmentState.submitted.post) return false;
+    return true;
+  });
 }
 
 function getGuidedSectionLabel(section, index) {
   if (!section) return `Section ${index + 1}`;
   if (section.id === "postAssessmentPanel") return "Post-assessment";
+  if (section.id === "thankYouPanel") return "Wrap-up";
   const title = section.querySelector(".act-title");
   return title?.textContent?.trim() || `Section ${index + 1}`;
 }
@@ -995,17 +999,38 @@ function ensureGuidedStageChrome() {
       nav.className = "guided-stage-nav";
       nav.innerHTML = `
         <div class="guided-stage-progress"></div>
-        <div class="guided-stage-actions">
-          <button type="button" class="guided-stage-btn secondary" data-guided-nav="prev">Previous Section</button>
-          <button type="button" class="guided-stage-btn primary" data-guided-nav="next">Continue</button>
-        </div>
+        <div class="guided-stage-actions"></div>
       `;
       section.appendChild(nav);
     }
 
     const progress = nav.querySelector(".guided-stage-progress");
-    const prevBtn = nav.querySelector('[data-guided-nav="prev"]');
-    const nextBtn = nav.querySelector('[data-guided-nav="next"]');
+    let actions = nav.querySelector(".guided-stage-actions");
+    if (!actions) {
+      actions = document.createElement("div");
+      actions.className = "guided-stage-actions";
+      nav.appendChild(actions);
+    }
+
+    let prevBtn = nav.querySelector('[data-guided-nav="prev"]');
+    if (!prevBtn) {
+      prevBtn = document.createElement("button");
+      prevBtn.type = "button";
+      prevBtn.className = "guided-stage-btn secondary";
+      prevBtn.dataset.guidedNav = "prev";
+      prevBtn.textContent = "Previous Section";
+      actions.appendChild(prevBtn);
+    }
+
+    let nextBtn = nav.querySelector('[data-guided-nav="next"]');
+    if (!nextBtn) {
+      nextBtn = document.createElement("button");
+      nextBtn.type = "button";
+      nextBtn.className = "guided-stage-btn primary";
+      nextBtn.dataset.guidedNav = "next";
+      actions.appendChild(nextBtn);
+    }
+
     if (progress) {
       progress.textContent = `Section ${index + 1} of ${sections.length}: ${getGuidedSectionLabel(section, index)}`;
     }
@@ -1016,11 +1041,11 @@ function ensureGuidedStageChrome() {
     if (nextBtn) {
       const isLast = index === sections.length - 1;
       if (isLast) {
-        nextBtn.remove();
+        nextBtn.hidden = true;
+        nextBtn.onclick = null;
       } else {
         nextBtn.hidden = false;
         nextBtn.textContent = `Continue to ${getGuidedSectionLabel(sections[index + 1], index + 1)}`;
-        nextBtn.disabled = false;
         nextBtn.onclick = () => setActiveGuidedStage(index + 1);
       }
     }
@@ -2242,7 +2267,7 @@ function buildAssessmentQuestionHtml(phase, question, index) {
     <article class="assessment-card" id="${prefix}-card" data-phase="${phase}" data-question-id="${question.id}">
       <button type="button" class="assessment-collapse-toggle" id="${prefix}-toggle" aria-expanded="true" aria-label="Collapse question">&#8722;</button>
       <div class="assessment-card-head">
-        <p class="story-tag">Question ${index + 1}</p>
+        <p class="story-tag">Question ${index + 1} of ${ASSESSMENT_QUESTIONS.length}</p>
         <h3>${question.title}</h3>
         <p class="assessment-collapsed-note" id="${prefix}-collapsed-note"></p>
       </div>
@@ -2428,11 +2453,16 @@ function syncAssessmentOptionButtons(phase, questionId, choice) {
   const buttons = document.querySelectorAll(`#${phase}-${questionId}-options .assessment-option`);
   const revealCorrect = phase === "post" && assessmentState.submitted.post;
   const correctValue = getAssessmentCorrectValue(questionId);
-  const highlightedValue = revealCorrect && correctValue ? correctValue : choice;
+  const choiceIsCorrect = Boolean(correctValue && choice === correctValue);
+  const highlightedValue = revealCorrect && correctValue && !choiceIsCorrect ? correctValue : choice;
 
   buttons.forEach((button) => {
     button.classList.toggle("selected", button.dataset.value === highlightedValue);
     button.classList.toggle("revealed-correct", Boolean(revealCorrect && correctValue && button.dataset.value === correctValue));
+    button.classList.toggle(
+      "revealed-correct-border",
+      Boolean(revealCorrect && correctValue && !choiceIsCorrect && button.dataset.value === correctValue),
+    );
   });
 
   return buttons;
@@ -2556,21 +2586,21 @@ function updateAssessmentSummary(phase) {
 
   if (!submitted) {
     if (saveStatus === "saving") {
-      summaryNode.textContent = "Submitting the assessment...";
+      summaryNode.textContent = "Submitting your responses...";
       return;
     }
     if (saveStatus === "error") {
-      summaryNode.textContent = "Could not save the assessment. Please try submitting again.";
+      summaryNode.textContent = "Could not save your responses. Please try submitting again.";
       return;
     }
-    summaryNode.textContent = "Submit once when you are finished.";
+    summaryNode.textContent = "You can revise answers until you submit.";
     return;
   }
 
   if (phase === "pre") {
     summaryNode.textContent = assessmentState.restoredFromSavedRecord.pre
-      ? "This browser already has a saved pre-assessment, so the acts are already unlocked."
-      : "Pre-assessment submitted and saved. The answers stay hidden for now, and the acts are now unlocked.";
+      ? "A saved pre-assessment was found, so the story is already unlocked."
+      : "Responses recorded. The answers stay hidden for now, and the story continues below.";
     return;
   }
 
@@ -2585,7 +2615,7 @@ function updateAssessmentSummary(phase) {
       text += " Same score as the pre-assessment.";
     }
   }
-  text += " Answers are now shown below.";
+  text += " Answers and explanations are now shown below. Thanks for working through the blog.";
   summaryNode.textContent = text;
 }
 
@@ -2812,6 +2842,9 @@ async function submitAssessmentPhase(phase) {
   if (phase === "pre") {
     updatePreUnlockState();
     setActiveGuidedStage(getStoredAssessmentStageIndex(), { behavior: "smooth" });
+  } else {
+    ensureGuidedStageChrome();
+    setActiveGuidedStage(getGuidedSections().length - 1, { behavior: "smooth" });
   }
   updateAssessmentSummary(phase);
 }
