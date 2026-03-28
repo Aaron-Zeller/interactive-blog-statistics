@@ -182,6 +182,48 @@
         line-height: 1.5;
       }
 
+      .interaction-prompt {
+        margin: 0.78rem 0 0.82rem;
+        padding: 0.72rem 0.84rem;
+        border: 1px solid rgba(170, 122, 46, 0.18);
+        border-radius: 12px;
+        background: #fffaf1;
+        color: #5d4320;
+        line-height: 1.52;
+      }
+
+      .interaction-prompt strong {
+        color: #9a5415;
+      }
+
+      .recap-box {
+        margin-top: 1.05rem;
+        padding: 0.95rem 1rem 1rem;
+        border: 1px solid #d7e3ea;
+        border-radius: 15px;
+        background: #ffffff;
+      }
+
+      .recap-box-title {
+        margin: 0;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #2f5a75;
+      }
+
+      .recap-list {
+        margin: 0.6rem 0 0;
+        padding-left: 1.05rem;
+        color: #24475f;
+      }
+
+      .recap-list li {
+        margin: 0.38rem 0 0;
+        line-height: 1.52;
+      }
+
       .story-card {
         position: relative;
         border: 1px solid #d6e3ec;
@@ -1919,6 +1961,63 @@
         line-height: 1.5;
       }
 
+      .guided-course-progress {
+        margin: 1rem 0 1.2rem;
+        padding: 0.88rem 0.98rem 0.92rem;
+        border: 1px solid #d7e3ea;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 8px 18px rgba(19, 54, 76, 0.04);
+      }
+
+      .guided-course-progress-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+      }
+
+      .guided-course-progress-kicker {
+        margin: 0;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #5e8297;
+      }
+
+      .guided-course-progress-label {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #24475f;
+      }
+
+      .guided-course-progress-focus {
+        margin: 0.5rem 0 0;
+        color: #46677c;
+        line-height: 1.5;
+        font-size: 0.92rem;
+      }
+
+      .guided-course-progress-bar {
+        margin-top: 0.72rem;
+        height: 10px;
+        border-radius: 999px;
+        background: #e6eff4;
+        overflow: hidden;
+      }
+
+      .guided-course-progress-fill {
+        display: block;
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: #68add4;
+        transition: width 220ms ease;
+      }
+
       .takeaway-box {
         margin-top: 0.95rem;
         padding: 1rem 1.05rem;
@@ -1989,6 +2088,11 @@
       .guided-stage-btn.secondary {
         background: #f7fbff;
         color: #36586f;
+      }
+
+      :is(button, select, input[type="range"]):focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(86, 180, 233, 0.24);
       }
 
       .assessment-card {
@@ -2437,6 +2541,17 @@
           grid-template-columns: 1fr;
         }
       }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
     </style>
   </head>
   <body>
@@ -2468,7 +2583,7 @@
           <span class="assessment-meta-chip">about 5 minutes</span>
         </div>
         <div class="assessment-toolbar">
-          <p class="assessment-summary" id="preAssessmentSummary">Submit once when you are finished.</p>
+          <p class="assessment-summary" id="preAssessmentSummary" role="status" aria-live="polite">Submit once when you are finished.</p>
         </div>
         <div id="preAssessmentGrid" class="assessment-grid" aria-label="pre assessment questions"></div>
         <div class="assessment-actions end">
@@ -2476,7 +2591,26 @@
         </div>
       </section>
 
-      <section class="storyboard" data-pre-gated="true" hidden>
+      <div class="guided-course-progress" id="guidedCourseProgress" hidden>
+        <div class="guided-course-progress-head">
+          <p class="guided-course-progress-kicker">Course Progress</p>
+          <p class="guided-course-progress-label" id="guidedCourseProgressLabel" aria-live="polite">Act 1 of 7</p>
+        </div>
+        <p class="guided-course-progress-focus" id="guidedCourseProgressFocus">Focus: asking better questions of messy data before trusting any pattern.</p>
+        <div
+          class="guided-course-progress-bar"
+          id="guidedCourseProgressBar"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          aria-labelledby="guidedCourseProgressLabel"
+        >
+          <span class="guided-course-progress-fill" id="guidedCourseProgressFill"></span>
+        </div>
+      </div>
+
+      <section class="storyboard" data-pre-gated="true" data-guided-focus="Focus: asking better questions of messy data before trusting any pattern." hidden>
         <p class="guided-stage-transition">Pre-assessment recorded. The story begins here.</p>
         <p class="act-title">Act 1: The Panic</p>
         <h2>The Inbox Saga: A Brief Tale of Panic and Better Decisions</h2>
@@ -2536,6 +2670,7 @@
             <code>height</code>, <code>weight</code>, <code>monthlySpend</code>, <code>monthlyIncome</code>. This is
             the point where statistics begins to replace guesswork.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> move <code>scrollingVelocity</code>, then hover the password scatterplot. The goal in this act is not to memorize a formula yet, but to notice which patterns are useful and which columns raise immediate red flags.</p>
           <div class="mini-corr">
             <p class="mini-corr-title">Correlation: It seems that the faster the scroll the lower the attention span.</p>
             <p class="mini-axis-line"><code>x-axis</code>: <code>scrollingVelocity</code> &nbsp;|&nbsp; <code>y-axis</code>: <code>attentionSpan</code></p>
@@ -2572,9 +2707,17 @@
             analyzed.
           </p>
         </article>
+        <div class="recap-box" aria-label="What to remember from Act 1">
+          <p class="recap-box-title">What To Remember From This Act</p>
+          <ul class="recap-list">
+            <li>Start with the decision question, not with a decorative chart.</li>
+            <li>Simple visual checks often reveal both useful signals and problematic variables very quickly.</li>
+            <li>Data quality and data relevance are part of the analysis, not a separate afterthought.</li>
+          </ul>
+        </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" hidden>
+      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: how different summaries describe center, spread, and shape in one sample." hidden>
         <p class="act-title">Act 2: The Numbers Arc</p>
         <h2>One Dataset, Three Useful Summaries</h2>
         <div class="learning-box" aria-label="What you will learn in this section">
@@ -2593,6 +2736,7 @@
           <p class="story-tag">Scene 1</p>
           <h3>You pin one mini dataset to the wall and squeeze three signals out of it.</h3>
           <p>Here <code>x = monthlySpend</code> and <code>y = monthlyIncome</code>. We will use the same sample to show how different summaries answer different questions.</p>
+          <p class="interaction-prompt"><strong>Try it:</strong> draw a new sample and watch which summaries move together and which ones answer genuinely different questions. This is the quickest way to see why one dataset needs more than one statistic.</p>
           <div class="dataset-layout">
             <div class="mini-table">
               <div class="mini-table-head">
@@ -2671,6 +2815,7 @@
             A single average hides structure. Quantiles recover some of that structure by asking where specific
             percentiles sit in the sorted sample, such as the 10th, 50th, and 90th percentile.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> resample the heights a few times and watch what stays fairly stable and what moves. This is a gentle way to see the difference between a distribution’s overall shape and one particular sample.</p>
           <div class="quantile-explain">
             <div class="quantile-blurb">
               <p class="name">Histogram</p>
@@ -2715,6 +2860,7 @@
             Mean, median, and mode all describe “center,” but they do not mean the same thing. The mode tracks the
             highest local pile-up, the median marks the middle rank, and the mean reacts most strongly to long tails.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> resample both skewed charts and look at the ordering before you read the labels. The important habit is to connect tail direction with where each summary gets pulled.</p>
           <div class="quantile-toolbar">
             <button id="act2SkewRefreshBtn" type="button">Resample Skewed Data</button>
             <p class="quantile-note">Refreshes both charts. Labels are vertically offset (mode top, median middle, mean bottom) to avoid overlap.</p>
@@ -2769,6 +2915,7 @@
             A multimodal distribution has several peaks. In that case the mode points to the tallest peak, while the
             median and mean summarize the data across all peaks at once.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> resample the multi-peak data and see how often the mode stays tied to one peak while the mean and median remain between several groups.</p>
           <div class="quantile-toolbar">
             <button id="act2MultiRefreshBtn" type="button">Resample Multi-Peak Bonus Points</button>
             <p class="quantile-note">Creates a multi-peak <code>bonus_points</code> sample to show why one “most common” value can be misleading.</p>
@@ -2794,9 +2941,17 @@
             <p class="skew-order">Observed takeaway: <strong id="act2MultiOrder">-</strong></p>
           </div>
         </article>
+        <div class="recap-box" aria-label="What to remember from Act 2">
+          <p class="recap-box-title">What To Remember From This Act</p>
+          <ul class="recap-list">
+            <li>Mean, variance, covariance, and correlation answer different questions and should not be treated as interchangeable summaries.</li>
+            <li>Histograms and quantiles tell you about shape, not just center.</li>
+            <li>When data are skewed or multi-peaked, mean, median, and mode can separate in informative ways.</li>
+          </ul>
+        </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" hidden>
+      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: why plotting the data matters even when the summary statistics look stable." hidden>
         <p class="act-title">Act 3: Reality Check</p>
         <h2>Sample Statistics Can Be Deceiving</h2>
         <div class="learning-box" aria-label="What you will learn in this section">
@@ -2818,6 +2973,7 @@
             Pick a dataset and watch the geometry change while the headline statistics barely move. This is the clearest
             argument for plotting before interpreting.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> switch between several datasets or hit <em>Random Dataset</em>. Ask yourself which statistics barely move and which geometric stories change completely.</p>
           <div class="act3-controls">
             <label class="act3-select-wrap" for="act3DatasetSelect">
               <span>Choose Dataset</span>
@@ -2912,6 +3068,7 @@
             A wide table stores the raw observations. A scatterplot matrix turns those same observations into visible
             relationships. Both views matter, but they answer different questions.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> hover one row in the table and trace that same observation across the matrix. This is a fast way to see how a single case contributes to several pairwise relationships at once.</p>
           <div class="quantile-toolbar">
             <button id="act3MatrixRefreshBtn" type="button">Resample Wide Dataset</button>
             <p class="quantile-note">
@@ -2941,6 +3098,7 @@
         <article class="story-card formula-scene">
           <p class="story-tag">Scene 4</p>
           <h3>Boxplots: one compact way to see center, spread, and outliers.</h3>
+          <p class="interaction-prompt"><strong>Try it:</strong> switch columns in the boxplot and compare them with the table and pairplot above. The goal is to notice how one compact summary complements, but never fully replaces, the raw data view.</p>
           <div class="act3-box-split">
             <div class="act3-box-copy">
               <p class="act3-shell-title">How To Read It</p>
@@ -2969,9 +3127,17 @@
             </div>
           </div>
         </article>
+        <div class="recap-box" aria-label="What to remember from Act 3">
+          <p class="recap-box-title">What To Remember From This Act</p>
+          <ul class="recap-list">
+            <li>Near-identical summary statistics can still come from radically different geometries.</li>
+            <li>Plotting is not decorative; it is the fastest way to detect lines, curves, clusters, and outliers.</li>
+            <li>Tables, pairplots, and boxplots each reveal different aspects of the same sample.</li>
+          </ul>
+        </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" hidden>
+      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: turning an observed gap into uncertainty, evidence, and a decision rule." hidden>
         <p class="act-title">Act 4: The Trial</p>
         <h2>Statistical Inference: Decision Time</h2>
         <div class="learning-box" aria-label="What you will learn in this section">
@@ -3024,6 +3190,7 @@
             Before collecting data, you should say what improvement would be practically meaningful. For conversion
             rates, lift is usually expressed in percentage points, not relative percent change.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> drag the green distribution until the distance feels practically meaningful, not just barely visible. This is the moment to define what counts as an effect worth caring about before the data arrives.</p>
           <div class="act4-key-eq"><code>expected lift = p(B) - p(A)</code> (in percentage points)</div>
           <div class="act4-illus">
             <svg id="act4LiftDemoSvg" viewBox="0 0 780 165" aria-label="Expected lift draggable illustration"></svg>
@@ -3042,6 +3209,7 @@
             orange dot is the observed lift, the blue segment is the 95% interval, and the dashed line at 0 marks “no
             effect.”
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> move sample size and observed lift separately. One changes the width of the interval, the other moves the estimate itself, and those are different sources of uncertainty.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3068,6 +3236,7 @@
             Every test starts with a simple comparison. For conversion, that comparison is a difference in rates. For
             numeric outcomes, it is a difference in means. This raw difference is the effect we are trying to explain.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> drag the green curve and watch the raw gap change before any standardization happens. This scene is here to separate the effect itself from the later question of whether it is large relative to noise.</p>
           <div class="act4-key-eq"><code>observed gap = estimate(B) - estimate(A)</code></div>
           <p class="quantile-note">
             The raw gap is the signal of interest. On its own, however, it does not say whether the difference is large
@@ -3089,6 +3258,7 @@
             A raw gap becomes much more interpretable once we divide it by its standard error. The result is a
             standardized statistic that tells us how far the observed effect is from zero in units of estimated noise.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> change the gap and the standard error separately. The key habit here is to distinguish a large raw effect from a large standardized effect.</p>
           <div class="act4-key-eq"><code>z = (observed gap - 0) / SE</code></div>
           <div class="act4-illus">
             <div class="act4-controls">
@@ -3116,6 +3286,7 @@
             Once we have a z-statistic, we ask how unusual it would be if the true effect were really zero. The
             p-value answers exactly that question and nothing more.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> slide the observed z inward and outward. Watch how quickly the shaded tail area changes, because that link between extremeness and tail probability is the whole idea of the p-value.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3140,6 +3311,7 @@
             impressive by chance alone. The point of p-values is not to prevent all false alarms, but to keep them
             genuinely infrequent when the assumptions hold.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> rerun the no-effect world several times and compare the histogram shapes. This helps separate “rare events do happen” from “false alarms are happening too often.”</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3167,6 +3339,7 @@
             and interval, then repeat. The goal is to see how much conclusions can move even when the underlying setup
             stays the same.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> run one experiment first, then a batch of 25. The key lesson is that repeated samples from the same world can still tell visibly different stories.</p>
           <div class="act4-grid">
             <div class="act4-panel">
               <p class="act3-shell-title">Experiment Setup</p>
@@ -3265,9 +3438,17 @@
             </div>
           </div>
         </article>
+        <div class="recap-box" aria-label="What to remember from Act 4">
+          <p class="recap-box-title">What To Remember From This Act</p>
+          <ul class="recap-list">
+            <li>Define the effect you care about before you look at the data.</li>
+            <li>Confidence intervals and p-values both depend on how large the gap is relative to sampling noise.</li>
+            <li>Even with the same underlying truth, repeated experiments can produce different-looking conclusions.</li>
+          </ul>
+        </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" hidden>
+      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: checking whether the assumptions behind a test are believable in the first place." hidden>
         <p class="act-title">Act 5: The Aftermath</p>
         <h2>When Assumptions Collapse</h2>
         <div class="learning-box" aria-label="What you will learn in this section">
@@ -3327,6 +3508,7 @@
             data-generating process, and then we apply a naive z-test anyway. The question is simple: how often does
             the test report significance when nothing is really there?
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> raise the hidden volatility and watch how quickly the false-positive rate drifts away from the nominal 5%. This is the clearest demonstration in the blog that bad assumptions can manufacture wins.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3375,6 +3557,7 @@
             Real data does not always look normal. Some metrics are skewed, some have heavy tails, and some combine
             several subpopulations. Before choosing a test, inspect the shape you are actually dealing with.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> switch the distribution family, then resample a few times. The goal is to learn which departures from normality are obvious enough that they should change your testing plan.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3408,6 +3591,7 @@
             quantile with the corresponding observed quantile. If the dots stay close to the diagonal, the model is a
             reasonable description. If they bend away, the model is missing something important.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> switch between sample families and watch the QQ pattern bend or straighten. The point is to connect a visual diagnostic with a modeling decision, not to treat the plot as decoration.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3443,6 +3627,7 @@
             theoretical quantiles. The basic question stays the same: do the ordered observations line up with what the
             model predicts?
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> deliberately mismatch the sample family and the reference family, then bring them back into alignment. This makes the logic of a QQ comparison much more concrete.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3486,9 +3671,17 @@
             <p class="quantile-note" id="act5QqScenarioSummary">Choose a sample and a reference family to compare quantiles.</p>
           </div>
         </article>
+        <div class="recap-box" aria-label="What to remember from Act 5">
+          <p class="recap-box-title">What To Remember From This Act</p>
+          <ul class="recap-list">
+            <li>A statistically tidy answer can still be wrong if the model assumptions are unrealistic.</li>
+            <li>Histograms and QQ plots are practical tools for deciding whether a reference model fits the sample.</li>
+            <li>When model fit drifts, false-positive control can drift with it.</li>
+          </ul>
+        </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" hidden>
+      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: treating estimates as random quantities rather than fixed truths from one sample." hidden>
         <p class="act-title">Act 6: The Negotiation</p>
         <h2>Point Estimates Before “Max It”</h2>
         <div class="learning-box" aria-label="What you will learn in this section">
@@ -3542,6 +3735,7 @@
             this one sample. The two are related, but they are not guaranteed to match exactly because sampling adds
             noise.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> draw several new samples without changing the hidden effect. Notice how the fitted line moves even though the underlying world has not changed.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3586,6 +3780,7 @@
             Keep the underlying process fixed and repeat the sampling. The point estimate still moves. That does not
             mean the method is broken; it means estimates are themselves random quantities.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> increase the number of repeated samples and watch the average estimate settle down. The goal is to separate normal sampling variation from actual evidence of bias.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3664,6 +3859,7 @@
             Here both estimators see exactly the same sample. As the outlier rate increases, you can compare how a
             mean-based method and a median-based method respond to the same contamination.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> raise the outlier rate and redraw the sample. Watch which estimator moves first, and ask which one you would trust if a few observations looked suspicious.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3701,9 +3897,17 @@
             <p class="quantile-note" id="act6MomMleSummary">Drawing MoM vs MLE sample...</p>
           </div>
         </article>
+        <div class="recap-box" aria-label="What to remember from Act 6">
+          <p class="recap-box-title">What To Remember From This Act</p>
+          <ul class="recap-list">
+            <li>A point estimate is one sample-based guess, not the final truth about the parameter.</li>
+            <li>Repeated sampling turns the estimate itself into a distribution, which is why uncertainty matters.</li>
+            <li>Different estimation methods can react very differently to outliers and model mismatch.</li>
+          </ul>
+        </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" hidden>
+      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: matching the right formal test to the design and reporting the result responsibly." hidden>
         <p class="act-title">Act 7: The Press Conference</p>
         <h2>Formal Testing Before Public Bragging</h2>
         <div class="learning-box" aria-label="What you will learn in this section">
@@ -3852,6 +4056,7 @@
             Here you can vary the sample size, the null mean, the true mean, and the known spread. The test then asks
             whether the sampled mean looks unusually far from \(\mu_0\) relative to the noise level \(\sigma/\sqrt{n}\).
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> change <em>n</em>, the null mean, or the known spread, then redraw the sample. This is the quickest way to see how evidence depends on both signal and measurement noise.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -3931,6 +4136,7 @@
             This interactive version shows the same logic with unknown variance. The sample standard deviation is now
             part of the test statistic, so the p-value is read from a t distribution rather than a standard normal.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> keep the mean shift similar, then lower the sample size and redraw. Watch how the heavier t tails make small-sample claims harder to sustain.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -4101,6 +4307,7 @@
             Power is the probability that the test will correctly detect a real effect of the size you care about. It
             depends on sample size, effect size, noise level, and the chosen significance threshold.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> change one design ingredient at a time and watch power move. This scene is here to show that weak studies are often a design problem, not just bad luck.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -4141,6 +4348,7 @@
             A p-value is a conditional probability. It is computed under the assumption that the null model is true,
             and it asks how extreme the observed test statistic would look in that world.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> move the observed z across both moderate and extreme values. This helps build an intuition for how quickly tail probability shrinks as evidence becomes more extreme.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -4173,6 +4381,7 @@
             A two-sided test asks whether the effect differs from zero in either direction. A one-sided test asks only
             about one pre-specified direction. That choice must be made before seeing the result.
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> keep the same observed z and switch only the alternative. The point is to see that changing the rule after seeing the data changes the p-value without changing the evidence itself.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -4214,6 +4423,7 @@
             all nulls are true and each test uses level \(\alpha\), the expected number of false positives is
             \(m\alpha\), and the probability of at least one false positive increases quickly with \(m\).
           </p>
+          <p class="interaction-prompt"><strong>Try it:</strong> increase either the number of tests or the per-test \(\alpha\), then run another round. This scene is here to make “significant” feel less magical and more mechanical.</p>
           <div class="act4-illus">
             <div class="act4-controls">
               <div class="act4-control">
@@ -4236,7 +4446,7 @@
                 <p class="value"><span id="act7MultExpected">-</span></p>
               </div>
               <div class="quantile-chip">
-                <p class="name">FWER</p>
+                <p class="name">Family-Wise Error Rate (FWER)</p>
                 <p class="value"><span id="act7MultFwer">-</span></p>
               </div>
               <div class="quantile-chip">
@@ -4247,9 +4457,17 @@
             <p class="quantile-note" id="act7MultSummary">Ready to simulate multiple testing under pure null conditions.</p>
           </div>
         </article>
+        <div class="recap-box" aria-label="What to remember from Act 7">
+          <p class="recap-box-title">What To Remember From This Act</p>
+          <ul class="recap-list">
+            <li>Hypothesis testing is about evidence against a null claim, not proof that a result is important.</li>
+            <li>The right test depends on the design, the unknowns, and whether observations are independent or paired.</li>
+            <li>P-values, power, sidedness, and multiple testing all shape what counts as a responsible public claim.</li>
+          </ul>
+        </div>
       </section>
 
-      <section class="assessment-panel" id="postAssessmentPanel" data-pre-gated="true" hidden>
+      <section class="assessment-panel" id="postAssessmentPanel" data-pre-gated="true" data-guided-focus="Focus: revisit the interpretation tasks once more and see what now feels easier to justify." hidden>
         <div class="assessment-head">
           <p class="act-title">Quiz Time</p>
           <h2>Let’s check where you stand</h2>
@@ -4264,7 +4482,7 @@
           <span class="assessment-meta-chip">feedback appears after submission</span>
         </div>
         <div class="assessment-toolbar">
-          <p class="assessment-summary" id="postAssessmentSummary">Submit once when you are finished.</p>
+          <p class="assessment-summary" id="postAssessmentSummary" role="status" aria-live="polite">Submit once when you are finished.</p>
         </div>
         <div id="postAssessmentGrid" class="assessment-grid" aria-label="post assessment questions"></div>
         <div class="assessment-actions end">
@@ -4272,7 +4490,7 @@
         </div>
       </section>
 
-      <section class="formula-panel" id="thankYouPanel" data-pre-gated="true" data-requires-post="true" hidden>
+      <section class="formula-panel" id="thankYouPanel" data-pre-gated="true" data-requires-post="true" data-guided-focus="Focus: leave with a few habits for reading data more carefully and skeptically." hidden>
         <p class="act-title">Wrap-Up</p>
         <h2>Thanks for working through the blog</h2>
         <p>

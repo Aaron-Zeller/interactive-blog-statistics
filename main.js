@@ -281,6 +281,11 @@ const els = {
   act7MultSummary: document.getElementById("act7MultSummary"),
 
   preAssessmentPanel: document.getElementById("preAssessmentPanel"),
+  guidedCourseProgress: document.getElementById("guidedCourseProgress"),
+  guidedCourseProgressLabel: document.getElementById("guidedCourseProgressLabel"),
+  guidedCourseProgressFocus: document.getElementById("guidedCourseProgressFocus"),
+  guidedCourseProgressBar: document.getElementById("guidedCourseProgressBar"),
+  guidedCourseProgressFill: document.getElementById("guidedCourseProgressFill"),
   preAssessmentGrid: document.getElementById("preAssessmentGrid"),
   preAssessmentSummary: document.getElementById("preAssessmentSummary"),
   preAssessmentCheckBtn: document.getElementById("preAssessmentCheckBtn"),
@@ -982,12 +987,73 @@ function getGuidedSections() {
   });
 }
 
+function getActNumberFromSection(section) {
+  const title = section?.querySelector(".act-title")?.textContent?.trim() || "";
+  const match = title.match(/^Act\s+(\d+)/i);
+  return match ? Number(match[1]) : null;
+}
+
 function getGuidedSectionLabel(section, index) {
   if (!section) return `Section ${index + 1}`;
   if (section.id === "postAssessmentPanel") return "Post-assessment";
   if (section.id === "thankYouPanel") return "Wrap-up";
   const title = section.querySelector(".act-title");
   return title?.textContent?.trim() || `Section ${index + 1}`;
+}
+
+function getGuidedProgressMeta(section, index) {
+  const actNumber = getActNumberFromSection(section);
+  const heading = section?.querySelector("h2")?.textContent?.trim();
+  const focus = section?.dataset?.guidedFocus || "";
+  if (actNumber) {
+    return {
+      label: heading ? `Act ${actNumber} of 7 · ${heading}` : `Act ${actNumber} of 7`,
+      percent: Math.round((actNumber / 7) * 100),
+      focus,
+    };
+  }
+  if (section?.id === "postAssessmentPanel") {
+    return {
+      label: "Post-assessment",
+      percent: 100,
+      focus,
+    };
+  }
+  if (section?.id === "thankYouPanel") {
+    return {
+      label: "Wrap-up",
+      percent: 100,
+      focus,
+    };
+  }
+  return {
+    label: getGuidedSectionLabel(section, index),
+    percent: 0,
+    focus: "",
+  };
+}
+
+function updateGuidedCourseProgress(section, index = 0) {
+  if (!els.guidedCourseProgress) return;
+  const unlocked = assessmentState.submitted.pre;
+  els.guidedCourseProgress.hidden = !unlocked;
+  if (!unlocked || !section) return;
+
+  const meta = getGuidedProgressMeta(section, index);
+  if (els.guidedCourseProgressLabel) {
+    els.guidedCourseProgressLabel.textContent = meta.label;
+  }
+  if (els.guidedCourseProgressFocus) {
+    els.guidedCourseProgressFocus.textContent = meta.focus || "";
+    els.guidedCourseProgressFocus.hidden = !meta.focus;
+  }
+  if (els.guidedCourseProgressBar) {
+    els.guidedCourseProgressBar.setAttribute("aria-valuenow", String(meta.percent));
+    els.guidedCourseProgressBar.setAttribute("aria-valuetext", meta.label);
+  }
+  if (els.guidedCourseProgressFill) {
+    els.guidedCourseProgressFill.style.width = `${meta.percent}%`;
+  }
 }
 
 function ensureGuidedStageChrome() {
@@ -1032,7 +1098,7 @@ function ensureGuidedStageChrome() {
     }
 
     if (progress) {
-      progress.textContent = `Section ${index + 1} of ${sections.length}: ${getGuidedSectionLabel(section, index)}`;
+      progress.textContent = getGuidedProgressMeta(section, index).label;
     }
     if (prevBtn) {
       prevBtn.hidden = index === 0;
@@ -1065,6 +1131,7 @@ function setActiveGuidedStage(index, options = {}) {
   setStoredAssessmentStageIndex(nextIndex);
 
   const activeSection = sections[nextIndex];
+  updateGuidedCourseProgress(activeSection, nextIndex);
   if (activeSection && options.scroll !== false) {
     activeSection.scrollIntoView({ behavior: options.behavior || "smooth", block: "start" });
   }
@@ -2624,6 +2691,9 @@ function updatePreUnlockState() {
   if (els.preAssessmentPanel) {
     els.preAssessmentPanel.hidden = unlocked;
   }
+  if (els.guidedCourseProgress) {
+    els.guidedCourseProgress.hidden = !unlocked;
+  }
   const guidedSections = getGuidedSections();
   guidedSections.forEach((section) => {
     section.hidden = !unlocked;
@@ -2635,6 +2705,7 @@ function updatePreUnlockState() {
     setActiveGuidedStage(savedIndex, { scroll: false });
   } else {
     setStoredAssessmentStageIndex(0);
+    updateGuidedCourseProgress(null);
   }
 }
 
