@@ -144,7 +144,11 @@
       .storyboard h2 {
         margin: 0;
         font-family: "Fraunces", serif;
-        font-size: clamp(1.2rem, 1.75vw, 1.65rem);
+        font-size: clamp(1.28rem, 1.95vw, 1.72rem);
+        font-weight: 600;
+        line-height: 1.1;
+        letter-spacing: -0.015em;
+        color: var(--ink);
       }
 
       .story-intro {
@@ -603,7 +607,11 @@
       .formula-panel h2 {
         margin: 0;
         font-family: "Fraunces", serif;
-        font-size: clamp(1.2rem, 1.75vw, 1.65rem);
+        font-size: clamp(1.28rem, 1.95vw, 1.72rem);
+        font-weight: 600;
+        line-height: 1.1;
+        letter-spacing: -0.015em;
+        color: var(--ink);
       }
 
       .formula-panel > p:not(.act-title) {
@@ -1972,7 +1980,7 @@
 
       .guided-course-progress-head {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
         gap: 0.8rem;
         flex-wrap: wrap;
@@ -2610,9 +2618,15 @@
         </div>
       </div>
 
-      <section class="storyboard" data-pre-gated="true" data-guided-focus="Focus: asking better questions of messy data before trusting any pattern." hidden>
+      <section
+        class="storyboard"
+        data-pre-gated="true"
+        data-act-number="1"
+        data-act-name="The Panic"
+        data-guided-focus="Focus: asking better questions of messy data before trusting any pattern."
+        hidden
+      >
         <p class="guided-stage-transition">Pre-assessment recorded. The story begins here.</p>
-        <p class="act-title">Act 1: The Panic</p>
         <h2>The Inbox Saga: A Brief Tale of Panic and Better Decisions</h2>
         <p class="story-intro">
           We begin with panic, then slow down and learn how to ask better questions of the data.
@@ -2717,9 +2731,15 @@
         </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: how different summaries describe center, spread, and shape in one sample." hidden>
-        <p class="act-title">Act 2: The Numbers Arc</p>
-        <h2>One Dataset, Three Useful Summaries</h2>
+      <section
+        class="formula-panel"
+        data-pre-gated="true"
+        data-act-number="2"
+        data-act-name="The Numbers Arc"
+        data-guided-focus="Focus: how different summaries describe center, spread, and shape in one sample."
+        hidden
+      >
+        <h2>The Summary Toolkit: One Dataset, Three Useful Summaries</h2>
         <p>
           One sample can be summarized in many ways. Here we focus on a small set of statistics that each answer a
           different question: where the data is centered, how spread out it is, and how two variables move together.
@@ -2951,9 +2971,15 @@
         </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: why plotting the data matters even when the summary statistics look stable." hidden>
-        <p class="act-title">Act 3: Reality Check</p>
-        <h2>Sample Statistics Can Be Deceiving</h2>
+      <section
+        class="formula-panel"
+        data-pre-gated="true"
+        data-act-number="3"
+        data-act-name="Reality Check"
+        data-guided-focus="Focus: why plotting the data matters even when the summary statistics look stable."
+        hidden
+      >
+        <h2>The Reality Check: Sample Statistics Can Be Deceiving</h2>
         <p>
           Summary statistics are useful, but they are not the same thing as seeing the data. Different datasets can
           share almost identical means, variances, and correlations while having completely different structure.
@@ -3137,9 +3163,15 @@
         </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: turning an observed gap into uncertainty, evidence, and a decision rule." hidden>
-        <p class="act-title">Act 4: The Trial</p>
-        <h2>Statistical Inference: Decision Time</h2>
+      <section
+        class="formula-panel"
+        data-pre-gated="true"
+        data-act-number="4"
+        data-act-name="The Trial"
+        data-guided-focus="Focus: turning an observed gap into uncertainty, evidence, and a decision rule."
+        hidden
+      >
+        <h2>The Decision Point: Statistical Inference in Action</h2>
         <p>
           Descriptive analysis tells you what happened in the sample. Inference asks whether the pattern is strong
           enough to support a decision beyond that one sample.
@@ -3448,9 +3480,15 @@
         </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: checking whether the assumptions behind a test are believable in the first place." hidden>
-        <p class="act-title">Act 5: The Aftermath</p>
-        <h2>When Assumptions Collapse</h2>
+      <section
+        class="formula-panel"
+        data-pre-gated="true"
+        data-act-number="5"
+        data-act-name="The Aftermath"
+        data-guided-focus="Focus: checking whether the assumptions behind a test are believable in the first place."
+        hidden
+      >
+        <h2>The Assumption Crash: When Models Stop Matching Reality</h2>
         <p>
           You ship the product, congratulate yourself for being data-driven, and then the sales numbers collapse
           catastrophically. A correct formula can still produce a bad decision if the assumptions behind it are wrong.
@@ -3681,9 +3719,15 @@
         </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: treating estimates as random quantities rather than fixed truths from one sample." hidden>
-        <p class="act-title">Act 6: The Negotiation</p>
-        <h2>Point Estimates Before “Max It”</h2>
+      <section
+        class="formula-panel"
+        data-pre-gated="true"
+        data-act-number="6"
+        data-act-name="The Negotiation"
+        data-guided-focus="Focus: treating estimates as random quantities rather than fixed truths from one sample."
+        hidden
+      >
+        <h2>The Estimation Step: Point Estimates Before “Max It”</h2>
         <p>
           Once you think you know which variable matters, the temptation is to turn it up as far as possible. Point
           estimation is the step where you slow down and quantify how large the effect appears to be in the data.
@@ -3907,9 +3951,15 @@
         </div>
       </section>
 
-      <section class="formula-panel" data-pre-gated="true" data-guided-focus="Focus: matching the right formal test to the design and reporting the result responsibly." hidden>
-        <p class="act-title">Act 7: The Press Conference</p>
-        <h2>Formal Testing Before Public Bragging</h2>
+      <section
+        class="formula-panel"
+        data-pre-gated="true"
+        data-act-number="7"
+        data-act-name="The Press Conference"
+        data-guided-focus="Focus: matching the right formal test to the design and reporting the result responsibly."
+        hidden
+      >
+        <h2>The Public Claim: Formal Testing Before Public Bragging</h2>
         <p>
           Estimation tells you what the sample suggests. Formal testing tells you how to express that evidence in a
           disciplined way when the claim will be presented as more than an internal hunch.

@@ -988,9 +988,19 @@ function getGuidedSections() {
 }
 
 function getActNumberFromSection(section) {
+  const datasetActNumber = Number(section?.dataset?.actNumber);
+  if (Number.isFinite(datasetActNumber) && datasetActNumber > 0) return datasetActNumber;
   const title = section?.querySelector(".act-title")?.textContent?.trim() || "";
   const match = title.match(/^Act\s+(\d+)/i);
   return match ? Number(match[1]) : null;
+}
+
+function getActNameFromSection(section) {
+  const datasetActName = section?.dataset?.actName?.trim();
+  if (datasetActName) return datasetActName;
+  const title = section?.querySelector(".act-title")?.textContent?.trim() || "";
+  const match = title.match(/^Act\s+\d+\s*:\s*(.+)$/i);
+  return match ? match[1].trim() : "";
 }
 
 function getGuidedSectionLabel(section, index) {
@@ -1003,11 +1013,11 @@ function getGuidedSectionLabel(section, index) {
 
 function getGuidedProgressMeta(section, index) {
   const actNumber = getActNumberFromSection(section);
-  const heading = section?.querySelector("h2")?.textContent?.trim();
+  const actName = getActNameFromSection(section);
   const focus = section?.dataset?.guidedFocus || "";
   if (actNumber) {
     return {
-      label: heading ? `Act ${actNumber} of 7 · ${heading}` : `Act ${actNumber} of 7`,
+      label: actName ? `Act ${actNumber} of 7 • ${actName}` : `Act ${actNumber} of 7`,
       percent: Math.round((actNumber / 7) * 100),
       focus,
     };
