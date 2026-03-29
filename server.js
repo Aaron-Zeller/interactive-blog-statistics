@@ -77,6 +77,8 @@ function createEmptyRecord(userId, now = new Date().toISOString()) {
     postTotal: null,
     postCorrect: null,
     postSavedAt: null,
+    feedbackResponses: null,
+    feedbackSavedAt: null,
   };
 }
 
@@ -103,6 +105,8 @@ function normalizePostgresRow(row) {
     postTotal: row.post_total,
     postCorrect: Array.isArray(row.post_correct) ? row.post_correct : null,
     postSavedAt: row.post_saved_at ? new Date(row.post_saved_at).toISOString() : null,
+    feedbackResponses: row.feedback_responses && typeof row.feedback_responses === "object" ? row.feedback_responses : null,
+    feedbackSavedAt: row.feedback_saved_at ? new Date(row.feedback_saved_at).toISOString() : null,
   });
 }
 
@@ -119,11 +123,15 @@ async function ensurePostgresTable() {
       post_score INTEGER,
       post_total INTEGER,
       post_correct JSONB,
-      post_saved_at TIMESTAMPTZ
+      post_saved_at TIMESTAMPTZ,
+      feedback_responses JSONB,
+      feedback_saved_at TIMESTAMPTZ
     )
   `);
   await pgPool.query(`ALTER TABLE ${POSTGRES_TABLE} ADD COLUMN IF NOT EXISTS pre_correct JSONB`);
   await pgPool.query(`ALTER TABLE ${POSTGRES_TABLE} ADD COLUMN IF NOT EXISTS post_correct JSONB`);
+  await pgPool.query(`ALTER TABLE ${POSTGRES_TABLE} ADD COLUMN IF NOT EXISTS feedback_responses JSONB`);
+  await pgPool.query(`ALTER TABLE ${POSTGRES_TABLE} ADD COLUMN IF NOT EXISTS feedback_saved_at TIMESTAMPTZ`);
 }
 
 async function ensureStorageReady() {
@@ -171,8 +179,9 @@ async function saveAssessmentRecord(record) {
       INSERT INTO ${POSTGRES_TABLE} (
         user_id, created_at, updated_at,
         pre_score, pre_total, pre_correct, pre_saved_at,
-        post_score, post_total, post_correct, post_saved_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        post_score, post_total, post_correct, post_saved_at,
+        feedback_responses, feedback_saved_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       ON CONFLICT (user_id) DO UPDATE SET
         created_at = EXCLUDED.created_at,
         updated_at = EXCLUDED.updated_at,
@@ -183,7 +192,9 @@ async function saveAssessmentRecord(record) {
         post_score = EXCLUDED.post_score,
         post_total = EXCLUDED.post_total,
         post_correct = EXCLUDED.post_correct,
-        post_saved_at = EXCLUDED.post_saved_at
+        post_saved_at = EXCLUDED.post_saved_at,
+        feedback_responses = EXCLUDED.feedback_responses,
+        feedback_saved_at = EXCLUDED.feedback_saved_at
     `,
     [
       record.userId,
@@ -197,6 +208,8 @@ async function saveAssessmentRecord(record) {
       record.postTotal,
       record.postCorrect ? JSON.stringify(record.postCorrect) : null,
       record.postSavedAt,
+      record.feedbackResponses ? JSON.stringify(record.feedbackResponses) : null,
+      record.feedbackSavedAt,
     ]
   );
 }
@@ -248,6 +261,8 @@ function toCsv(records) {
     "postTotal",
     "postCorrect",
     "postSavedAt",
+    "feedbackResponses",
+    "feedbackSavedAt",
   ];
   const escape = (value) => {
     if (value === null || value === undefined) return "";
@@ -269,6 +284,8 @@ function toCsv(records) {
         record.postTotal,
         record.postCorrect ? JSON.stringify(record.postCorrect) : "",
         record.postSavedAt,
+        record.feedbackResponses ? JSON.stringify(record.feedbackResponses) : "",
+        record.feedbackSavedAt,
       ]
         .map(escape)
         .join(",")
@@ -369,6 +386,50 @@ async function handleAssessmentGet(req, res, url) {
   }
 }
 
+async function handleFeedbackPost(req, res) {
+  try {
+    const rawBody = await readRequestBody(req);
+    const body = rawBody ? JSON.parse(rawBody) : {};
+    const { userId, responses } = body;
+
+    if (!userId || !responses || typeof responses !== "object" || Array.isArray(responses)) {
+      sendJson(res, 400, { error: "Invalid feedback payload" });
+      return;
+    }
+
+    const cleanedResponses = Object.fromEntries(
+      Object.entries(responses).filter(([, value]) => Number.isFinite(Number(value)) && Number(value) >= 1 && Number(value) <= 5)
+    );
+
+    if (!Object.keys(cleanedResponses).length) {
+      sendJson(res, 400, { error: "Feedback payload was empty" });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    let record = await getAssessmentRecord(userId);
+
+    if (!record) {
+      record = createEmptyRecord(userId, now);
+    }
+
+    if (record.feedbackSavedAt) {
+      sendJson(res, 409, { error: "Feedback already submitted", record });
+      return;
+    }
+
+    record.feedbackResponses = cleanedResponses;
+    record.feedbackSavedAt = now;
+    record.updatedAt = now;
+
+    await saveAssessmentRecord(record);
+    sendJson(res, 200, { ok: true, record });
+  } catch (err) {
+    console.error("Could not save feedback result:", err);
+    sendJson(res, 500, { error: "Could not save feedback result" });
+  }
+}
+
 async function handleAssessmentExport(req, res, url) {
   if (!isAuthorizedExport(url, req)) {
     sendJson(res, 403, { error: "Forbidden" });
@@ -408,6 +469,15 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === "/api/assessment/export") {
     if (req.method === "GET") {
       await handleAssessmentExport(req, res, url);
+      return;
+    }
+    sendJson(res, 405, { error: "Method not allowed" });
+    return;
+  }
+
+  if (url.pathname === "/api/feedback") {
+    if (req.method === "POST") {
+      await handleFeedbackPost(req, res);
       return;
     }
     sendJson(res, 405, { error: "Method not allowed" });

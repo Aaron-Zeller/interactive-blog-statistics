@@ -1942,6 +1942,116 @@
         gap: 1rem;
       }
 
+      .feedback-panel {
+        border: 1px solid #d9e5ed;
+        border-radius: 22px;
+        padding: 1.45rem 1.4rem 1.55rem;
+        background: #fffdf8;
+        box-shadow: 0 16px 34px rgba(19, 54, 76, 0.05);
+      }
+
+      .feedback-panel h2 {
+        margin: 0.14rem 0 0;
+        font-size: clamp(1.9rem, 3.6vw, 2.55rem);
+      }
+
+      .feedback-intro {
+        margin: 0.82rem 0 0;
+        color: #24475f;
+        line-height: 1.62;
+      }
+
+      .feedback-card-list {
+        display: grid;
+        gap: 0.95rem;
+        margin-top: 1.2rem;
+      }
+
+      .feedback-card {
+        border: 1px solid #d8e5ee;
+        border-radius: 16px;
+        padding: 1rem 1rem 1.05rem;
+        background: #ffffff;
+      }
+
+      .feedback-card h3 {
+        margin: 0;
+        font-size: 1rem;
+        color: #19384e;
+      }
+
+      .feedback-scale {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.78rem;
+      }
+
+      .feedback-option {
+        border: 1px solid #d5e3ec;
+        border-radius: 12px;
+        padding: 0.72rem 0.58rem;
+        background: #ffffff;
+        color: #24475f;
+        font: inherit;
+        line-height: 1.35;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+      }
+
+      .feedback-option:hover {
+        border-color: #9dc6df;
+        box-shadow: 0 8px 18px rgba(19, 54, 76, 0.08);
+        transform: translateY(-1px);
+      }
+
+      .feedback-option.selected {
+        border-color: #d55e00;
+        box-shadow: 0 0 0 2px rgba(213, 94, 0, 0.14);
+        color: #143a52;
+      }
+
+      .feedback-option:disabled {
+        cursor: default;
+        opacity: 0.82;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .feedback-scale-label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+
+      .feedback-scale-value {
+        display: block;
+        margin-top: 0.18rem;
+        font-size: 0.74rem;
+        color: #527086;
+      }
+
+      .feedback-summary {
+        margin: 1rem 0 0;
+        min-height: 2.6rem;
+        padding: 0.7rem 0.82rem;
+        border-radius: 12px;
+        background: rgba(72, 102, 120, 0.08);
+        color: #355b72;
+        line-height: 1.5;
+      }
+
+      .feedback-summary.success {
+        background: rgba(0, 158, 115, 0.12);
+        color: #0f6a52;
+      }
+
+      .feedback-summary.error {
+        background: rgba(213, 94, 0, 0.12);
+        color: #8a4309;
+      }
+
       .guided-stage-nav {
         margin-top: 1.4rem;
         padding-top: 1rem;
@@ -2055,6 +2165,16 @@
       .takeaway-list li {
         margin: 0.44rem 0 0;
         line-height: 1.54;
+      }
+
+      @media (max-width: 860px) {
+        .feedback-scale {
+          grid-template-columns: 1fr;
+        }
+
+        .feedback-option {
+          text-align: left;
+        }
       }
 
       .guided-stage-actions {
@@ -4537,6 +4657,29 @@
         <div id="postAssessmentGrid" class="assessment-grid" aria-label="post assessment questions"></div>
         <div class="assessment-actions end">
           <button id="postAssessmentCheckBtn" type="button">Submit Assessment</button>
+        </div>
+      </section>
+
+      <section class="feedback-panel" id="blogFeedbackPanel" data-pre-gated="true" data-requires-post="true" data-guided-focus="Focus: reflect briefly on the learning experience and what felt most supportive." hidden>
+        <div class="assessment-head">
+          <p class="act-title">Optional Feedback</p>
+          <h2>How did the blog feel to work through?</h2>
+        </div>
+        <p class="feedback-intro">
+          If you have another minute, tell us how the blog worked for you as a learning experience. This step is
+          optional and does not affect your score.
+        </p>
+        <div class="assessment-meta" aria-label="feedback details">
+          <span class="assessment-meta-chip">5 questions</span>
+          <span class="assessment-meta-chip">about 1 minute</span>
+          <span class="assessment-meta-chip">optional</span>
+        </div>
+        <div class="feedback-card-list" id="blogFeedbackList" aria-label="optional blog feedback questions"></div>
+        <p class="feedback-summary" id="blogFeedbackSummary" role="status" aria-live="polite">
+          Optional. You can submit feedback here or continue straight to the wrap-up.
+        </p>
+        <div class="assessment-actions end">
+          <button id="blogFeedbackSubmitBtn" type="button">Submit Feedback</button>
         </div>
       </section>
 

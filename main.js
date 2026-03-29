@@ -293,6 +293,11 @@ const els = {
   postAssessmentGrid: document.getElementById("postAssessmentGrid"),
   postAssessmentSummary: document.getElementById("postAssessmentSummary"),
   postAssessmentCheckBtn: document.getElementById("postAssessmentCheckBtn"),
+  blogFeedbackPanel: document.getElementById("blogFeedbackPanel"),
+  blogFeedbackList: document.getElementById("blogFeedbackList"),
+  blogFeedbackSummary: document.getElementById("blogFeedbackSummary"),
+  blogFeedbackSubmitBtn: document.getElementById("blogFeedbackSubmitBtn"),
+  thankYouPanel: document.getElementById("thankYouPanel"),
 };
 
 const heroMotion = {
@@ -484,6 +489,13 @@ const assessmentState = {
   },
 };
 
+const feedbackState = {
+  responses: {},
+  submitted: false,
+  saveStatus: "idle",
+  restoredFromSavedRecord: false,
+};
+
 const assessmentUiState = {
   pre: {},
   post: {},
@@ -495,6 +507,35 @@ const assessmentUiState = {
 
 const ASSESSMENT_USER_KEY = "statsBlogAssessmentUserId";
 const ASSESSMENT_STAGE_KEY = "statsBlogAssessmentStageIndex";
+const BLOG_FEEDBACK_QUESTIONS = [
+  {
+    id: "engagement",
+    prompt: "The blog kept me engaged from section to section.",
+  },
+  {
+    id: "interactivity",
+    prompt: "The interactive elements helped me understand the statistical ideas.",
+  },
+  {
+    id: "clarity",
+    prompt: "The visual design made it clear what to pay attention to.",
+  },
+  {
+    id: "pacing",
+    prompt: "The sequence of acts and scenes felt well paced for learning.",
+  },
+  {
+    id: "confidence",
+    prompt: "After working through the blog, I feel more confident interpreting plots and statistical test results.",
+  },
+];
+const BLOG_FEEDBACK_SCALE = [
+  { value: 1, short: "SD", label: "Strongly disagree" },
+  { value: 2, short: "D", label: "Disagree" },
+  { value: 3, short: "N", label: "Neither" },
+  { value: 4, short: "A", label: "Agree" },
+  { value: 5, short: "SA", label: "Strongly agree" },
+];
 
 const ASSESSMENT_QUESTIONS = [
   {
@@ -950,6 +991,14 @@ function cloneAssessmentDefaults() {
   return next;
 }
 
+function cloneFeedbackDefaults() {
+  const next = {};
+  BLOG_FEEDBACK_QUESTIONS.forEach((question) => {
+    next[question.id] = "";
+  });
+  return next;
+}
+
 function cloneAssessmentUiDefaults() {
   const next = {};
   ASSESSMENT_QUESTIONS.forEach((question) => {
@@ -1006,6 +1055,7 @@ function getActNameFromSection(section) {
 function getGuidedSectionLabel(section, index) {
   if (!section) return `Section ${index + 1}`;
   if (section.id === "postAssessmentPanel") return "Post-assessment";
+  if (section.id === "blogFeedbackPanel") return "Optional feedback";
   if (section.id === "thankYouPanel") return "Wrap-up";
   const title = section.querySelector(".act-title");
   return title?.textContent?.trim() || `Section ${index + 1}`;
@@ -1025,7 +1075,14 @@ function getGuidedProgressMeta(section, index) {
   if (section?.id === "postAssessmentPanel") {
     return {
       label: "Post-assessment",
-      percent: 100,
+      percent: 88,
+      focus,
+    };
+  }
+  if (section?.id === "blogFeedbackPanel") {
+    return {
+      label: "Optional feedback",
+      percent: 94,
       focus,
     };
   }
@@ -2696,6 +2753,159 @@ function updateAssessmentSummary(phase) {
   summaryNode.textContent = text;
 }
 
+function buildBlogFeedbackQuestionHtml(question, index) {
+  const options = BLOG_FEEDBACK_SCALE.map(
+    (option) => `
+      <button
+        type="button"
+        class="feedback-option"
+        data-question-id="${question.id}"
+        data-value="${option.value}"
+        aria-label="${option.label}"
+      >
+        <span class="feedback-scale-label">${option.short}</span>
+        <span class="feedback-scale-value">${option.label}</span>
+      </button>
+    `
+  ).join("");
+
+  return `
+    <article class="feedback-card" id="blogFeedback-${question.id}">
+      <p class="story-tag">Question ${index + 1} of ${BLOG_FEEDBACK_QUESTIONS.length}</p>
+      <h3>${question.prompt}</h3>
+      <div class="feedback-scale" role="group" aria-label="${question.prompt}">
+        ${options}
+      </div>
+    </article>
+  `;
+}
+
+function syncBlogFeedbackButtons() {
+  BLOG_FEEDBACK_QUESTIONS.forEach((question) => {
+    const value = String(feedbackState.responses[question.id] || "");
+    document.querySelectorAll(`.feedback-option[data-question-id="${question.id}"]`).forEach((button) => {
+      button.classList.toggle("selected", button.dataset.value === value);
+      button.disabled = feedbackState.submitted;
+    });
+  });
+}
+
+function updateBlogFeedbackSummary() {
+  if (!els.blogFeedbackSummary) return;
+  els.blogFeedbackSummary.classList.remove("success", "error");
+
+  if (feedbackState.submitted) {
+    els.blogFeedbackSummary.textContent = feedbackState.restoredFromSavedRecord
+      ? "A saved feedback response was found. Thank you."
+      : "Thanks. Your optional feedback has been recorded.";
+    els.blogFeedbackSummary.classList.add("success");
+    return;
+  }
+
+  if (feedbackState.saveStatus === "saving") {
+    els.blogFeedbackSummary.textContent = "Submitting your optional feedback...";
+    return;
+  }
+
+  if (feedbackState.saveStatus === "error") {
+    els.blogFeedbackSummary.textContent = "We could not save the feedback just now. You can try again, or continue to the wrap-up.";
+    els.blogFeedbackSummary.classList.add("error");
+    return;
+  }
+
+  els.blogFeedbackSummary.textContent = "Optional. You can submit feedback here or continue straight to the wrap-up.";
+}
+
+function setBlogFeedbackDisabled(disabled) {
+  if (els.blogFeedbackSubmitBtn) {
+    els.blogFeedbackSubmitBtn.disabled = disabled;
+    els.blogFeedbackSubmitBtn.textContent = disabled ? "Feedback Submitted" : "Submit Feedback";
+  }
+  document.querySelectorAll(".feedback-option").forEach((button) => {
+    button.disabled = disabled;
+  });
+}
+
+function renderBlogFeedback() {
+  if (!els.blogFeedbackList) return;
+  els.blogFeedbackList.innerHTML = BLOG_FEEDBACK_QUESTIONS.map(buildBlogFeedbackQuestionHtml).join("");
+  els.blogFeedbackList.querySelectorAll(".feedback-option").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (feedbackState.submitted) return;
+      const questionId = button.dataset.questionId;
+      const value = Number(button.dataset.value);
+      if (!questionId || !Number.isFinite(value)) return;
+      feedbackState.responses[questionId] = value;
+      syncBlogFeedbackButtons();
+      updateBlogFeedbackSummary();
+    });
+  });
+  syncBlogFeedbackButtons();
+  setBlogFeedbackDisabled(feedbackState.submitted);
+  updateBlogFeedbackSummary();
+}
+
+async function submitBlogFeedback() {
+  if (feedbackState.submitted || !assessmentState.userId || typeof fetch !== "function") return;
+  const answeredCount = BLOG_FEEDBACK_QUESTIONS.filter((question) => Number.isFinite(Number(feedbackState.responses[question.id]))).length;
+  if (answeredCount === 0) {
+    if (els.blogFeedbackSummary) {
+      els.blogFeedbackSummary.textContent = "This step is optional. If you want to submit feedback, please answer at least one question.";
+      els.blogFeedbackSummary.classList.add("error");
+    }
+    return;
+  }
+
+  feedbackState.saveStatus = "saving";
+  updateBlogFeedbackSummary();
+
+  try {
+    const response = await fetch("/api/feedback", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: assessmentState.userId,
+        responses: BLOG_FEEDBACK_QUESTIONS.reduce((acc, question) => {
+          const value = Number(feedbackState.responses[question.id]);
+          if (Number.isFinite(value) && value >= 1 && value <= 5) acc[question.id] = value;
+          return acc;
+        }, {}),
+      }),
+    });
+
+    if (response.status === 409) {
+      feedbackState.submitted = true;
+      feedbackState.saveStatus = "saved";
+      feedbackState.restoredFromSavedRecord = true;
+    } else {
+      if (!response.ok) throw new Error(`Feedback save failed with status ${response.status}`);
+      feedbackState.submitted = true;
+      feedbackState.saveStatus = "saved";
+      const payload = await response.json();
+      if (payload.record && payload.record.feedbackResponses) {
+        feedbackState.responses = {
+          ...cloneFeedbackDefaults(),
+          ...payload.record.feedbackResponses,
+        };
+      }
+    }
+
+    syncBlogFeedbackButtons();
+    setBlogFeedbackDisabled(true);
+    updateBlogFeedbackSummary();
+
+    const feedbackIndex = getGuidedSections().findIndex((section) => section.id === "blogFeedbackPanel");
+    if (feedbackIndex >= 0) {
+      setActiveGuidedStage(feedbackIndex + 1, { behavior: "smooth" });
+    }
+  } catch (err) {
+    feedbackState.saveStatus = "error";
+    updateBlogFeedbackSummary();
+  }
+}
+
 function updatePreUnlockState() {
   const unlocked = assessmentState.submitted.pre;
   if (els.preAssessmentPanel) {
@@ -2925,7 +3135,8 @@ async function submitAssessmentPhase(phase) {
     setActiveGuidedStage(getStoredAssessmentStageIndex(), { behavior: "smooth" });
   } else {
     ensureGuidedStageChrome();
-    setActiveGuidedStage(getGuidedSections().length - 1, { behavior: "smooth" });
+    const feedbackIndex = getGuidedSections().findIndex((section) => section.id === "blogFeedbackPanel");
+    setActiveGuidedStage(feedbackIndex >= 0 ? feedbackIndex : getGuidedSections().length - 1, { behavior: "smooth" });
   }
   updateAssessmentSummary(phase);
 }
@@ -2952,6 +3163,15 @@ async function loadExistingAssessmentRecord() {
       assessmentState.saveStatus.post = "saved";
       assessmentState.restoredFromSavedRecord.post = true;
     }
+    if (record.feedbackSavedAt) {
+      feedbackState.submitted = true;
+      feedbackState.saveStatus = "saved";
+      feedbackState.restoredFromSavedRecord = true;
+      feedbackState.responses = {
+        ...cloneFeedbackDefaults(),
+        ...(record.feedbackResponses && typeof record.feedbackResponses === "object" ? record.feedbackResponses : {}),
+      };
+    }
   } catch (err) {
     // Leave the assessment usable even if the saved record cannot be loaded.
   }
@@ -2963,14 +3183,20 @@ async function initAssessments() {
   assessmentState.userId = getOrCreateAssessmentUserId();
   assessmentState.pre = cloneAssessmentDefaults();
   assessmentState.post = cloneAssessmentDefaults();
+  feedbackState.responses = cloneFeedbackDefaults();
+  feedbackState.submitted = false;
+  feedbackState.saveStatus = "idle";
+  feedbackState.restoredFromSavedRecord = false;
   assessmentUiState.pre = cloneAssessmentUiDefaults();
   assessmentUiState.post = cloneAssessmentUiDefaults();
   ensureAssessmentScrollBinding();
   await loadExistingAssessmentRecord();
   renderAssessmentPhase("pre");
+  renderBlogFeedback();
   updatePreUnlockState();
   updateAssessmentSummary("pre");
   updateAssessmentSummary("post");
+  updateBlogFeedbackSummary();
 
   if (els.preAssessmentCheckBtn) {
     els.preAssessmentCheckBtn.addEventListener("click", () => {
@@ -2980,6 +3206,11 @@ async function initAssessments() {
   if (els.postAssessmentCheckBtn) {
     els.postAssessmentCheckBtn.addEventListener("click", () => {
       void submitAssessmentPhase("post");
+    });
+  }
+  if (els.blogFeedbackSubmitBtn) {
+    els.blogFeedbackSubmitBtn.addEventListener("click", () => {
+      void submitBlogFeedback();
     });
   }
 }
