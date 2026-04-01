@@ -1402,8 +1402,8 @@ function drawAssessmentBoxplotNormalityFigure(prefix) {
   const d3 = window.d3;
   const values = ASSESSMENT_BOXPLOT_LEFT_SKEW_SAMPLE;
   const s = act3BoxStats(values);
-  const w = Math.max(420, Math.floor(svgNode.clientWidth));
-  const h = Math.max(190, Math.floor(svgNode.clientHeight));
+  const w = 780;
+  const h = 240;
   const margin = { top: 18, right: 24, bottom: 46, left: 52 };
   const innerW = w - margin.left - margin.right;
   const innerH = h - margin.top - margin.bottom;
@@ -1483,7 +1483,10 @@ function drawAssessmentBoxplotNormalityFigure(prefix) {
     .enter()
     .append("circle")
     .attr("class", "outlier")
-    .attr("cx", () => cx + (Math.random() - 0.5) * boxW * 0.22)
+    .attr("cx", (_, i) => {
+      const phase = ((i * 2.61803398875) % 1) - 0.5;
+      return cx + phase * boxW * 0.22;
+    })
     .attr("cy", (v) => y(v))
     .attr("r", 2.2)
     .attr("fill", "rgba(0, 114, 178, 0.75)");
@@ -1783,6 +1786,8 @@ function drawAssessmentQqDiagnosticFigure(prefix) {
   drawAct5QqChart(svg, qq, {
     xLabel: "Theoretical fitted Normal quantiles",
     yLabel: "Measured sample quantiles",
+    width: 780,
+    height: 240,
   });
 }
 
@@ -1794,14 +1799,16 @@ function drawAssessmentPValueDecisionFigure(prefix, z) {
     domain: [-4, 4],
     stat: z,
     mode: "two",
+    width: 780,
+    height: 240,
   });
 }
 
-function drawAct5AssumptionChartInto(svgNode, values) {
+function drawAct5AssumptionChartInto(svgNode, values, { width = null, height = null } = {}) {
   if (!svgNode || !window.d3) return;
   const d3 = window.d3;
-  const w = Math.max(420, Math.floor(svgNode.clientWidth));
-  const h = Math.max(180, Math.floor(svgNode.clientHeight));
+  const w = width ?? Math.max(420, Math.floor(svgNode.clientWidth));
+  const h = height ?? Math.max(180, Math.floor(svgNode.clientHeight));
   const margin = { top: 18, right: 18, bottom: 38, left: 34 };
   const innerW = w - margin.left - margin.right;
   const innerH = h - margin.top - margin.bottom;
@@ -1892,7 +1899,7 @@ function drawAct5AssumptionChartInto(svgNode, values) {
 function drawAssessmentAssumptionStressFigure(prefix) {
   const svg = document.getElementById(`${prefix}-figure`);
   if (!svg) return;
-  drawAct5AssumptionChartInto(svg, ASSESSMENT_ACT5_STRESS_SAMPLE);
+  drawAct5AssumptionChartInto(svg, ASSESSMENT_ACT5_STRESS_SAMPLE, { width: 780, height: 240 });
 }
 
 function drawAct3ScatterInto(svgNode, points, {
@@ -1903,11 +1910,13 @@ function drawAct3ScatterInto(svgNode, points, {
   line = null,
   lineColor = "#d55e00",
   lineDash = "5 4",
+  width = null,
+  height = null,
 } = {}) {
   if (!svgNode || !window.d3 || !points.length) return;
   const d3 = window.d3;
-  const w = Math.max(360, Math.floor(svgNode.clientWidth));
-  const h = Math.max(260, Math.floor(svgNode.clientHeight));
+  const w = width ?? Math.max(360, Math.floor(svgNode.clientWidth));
+  const h = height ?? Math.max(260, Math.floor(svgNode.clientHeight));
   const margin = { top: 18, right: 18, bottom: 44, left: 46 };
   const innerW = w - margin.left - margin.right;
   const innerH = h - margin.top - margin.bottom;
@@ -2004,6 +2013,8 @@ function drawAssessmentSummaryVsShapeFigure(prefix) {
     line: { x1: 0, y1: intercept, x2: 100, y2: intercept + slope * 100 },
     lineColor: "#d55e00",
     lineDash: "5 4",
+    width: 780,
+    height: 240,
   });
 }
 
@@ -2016,14 +2027,16 @@ function drawAssessmentCiAlphaDecisionFigure(prefix) {
     liftPp: question.observedLiftPp,
     ciLo: question.ciLo,
     ciHi: question.ciHi,
+    width: 780,
+    height: 240,
   });
 }
 
-function drawAct6SlopeDistInto(svgNode, values, { trueSlope, n, noise, summaryTarget = null } = {}) {
+function drawAct6SlopeDistInto(svgNode, values, { trueSlope, n, noise, summaryTarget = null, width = null, height = null } = {}) {
   if (!svgNode || !window.d3) return null;
   const d3 = window.d3;
-  const w = Math.max(420, Math.floor(svgNode.clientWidth));
-  const h = Math.max(170, Math.floor(svgNode.clientHeight));
+  const w = width ?? Math.max(420, Math.floor(svgNode.clientWidth));
+  const h = height ?? Math.max(170, Math.floor(svgNode.clientHeight));
   const margin = { top: 18, right: 18, bottom: 38, left: 34 };
   const innerW = w - margin.left - margin.right;
   const innerH = h - margin.top - margin.bottom;
@@ -2166,6 +2179,8 @@ function drawAssessmentEstimateBiasFigure(prefix) {
     trueSlope: sample.trueSlope,
     n: sample.n,
     noise: sample.noise,
+    width: 780,
+    height: 240,
   });
 }
 
@@ -2184,6 +2199,8 @@ function drawAssessmentSkewCenterOrderFigure(prefix) {
     markerIds: {},
     isCurrency: true,
     showMarkers: false,
+    width: 780,
+    height: 240,
   });
 }
 
@@ -2217,8 +2234,8 @@ function drawAssessmentMultipleObservedFigure(prefix, m, orangeCount) {
   const svgNode = document.getElementById(`${prefix}-figure`);
   if (!svgNode || !window.d3) return;
   const d3 = window.d3;
-  const w = Math.max(420, Math.floor(svgNode.clientWidth));
-  const h = Math.max(180, Math.floor(svgNode.clientHeight));
+  const w = 780;
+  const h = 240;
   const svg = d3.select(svgNode);
   svg.attr("viewBox", `0 0 ${w} ${h}`);
   svg.selectAll("*").remove();
@@ -3972,14 +3989,16 @@ function drawSingleSkewHistogram({
   markerIds,
   isCurrency,
   showMarkers = true,
+  width = null,
+  height = null,
 }) {
   if (!svgNode || !window.d3 || !values.length) return;
   const d3 = window.d3;
   const medianVal = empiricalQuantile(values, 0.5);
   const meanVal = mean(values);
   const skewSd = sd(values);
-  const w = Math.max(320, Math.floor(svgNode.clientWidth));
-  const h = Math.max(220, Math.floor(svgNode.clientHeight));
+  const w = width ?? Math.max(320, Math.floor(svgNode.clientWidth));
+  const h = height ?? Math.max(220, Math.floor(svgNode.clientHeight));
   const margin = { top: 24, right: 16, bottom: 34, left: 42 };
   const innerW = w - margin.left - margin.right;
   const innerH = h - margin.top - margin.bottom;
@@ -5482,11 +5501,11 @@ function syncAct4ConceptControls() {
   if (els.act4PZVal) els.act4PZVal.textContent = fmtNum(act4State.pDemoZ, 2);
 }
 
-function drawAct4CiChartInto(svgNode, { liftPp, ciLo, ciHi, xLabel = "Lift in conversion rate (treatment - control, pp)" } = {}) {
+function drawAct4CiChartInto(svgNode, { liftPp, ciLo, ciHi, xLabel = "Lift in conversion rate (treatment - control, pp)", width = null, height = null } = {}) {
   if (!svgNode || !window.d3) return;
   const d3 = window.d3;
-  const w = Math.max(420, Math.floor(svgNode.clientWidth));
-  const h = Math.max(170, Math.floor(svgNode.clientHeight));
+  const w = width ?? Math.max(420, Math.floor(svgNode.clientWidth));
+  const h = height ?? Math.max(170, Math.floor(svgNode.clientHeight));
   const margin = { top: 20, right: 20, bottom: 42, left: 28 };
   const innerW = w - margin.left - margin.right;
   const innerH = h - margin.top - margin.bottom;
@@ -6819,8 +6838,8 @@ function computeAct5QqMetrics(values, refType = "normal") {
 function drawAct5QqChart(svgNode, qqData, labels = {}) {
   if (!svgNode || !window.d3) return;
   const d3 = window.d3;
-  const w = Math.max(420, Math.floor(svgNode.clientWidth));
-  const h = Math.max(170, Math.floor(svgNode.clientHeight));
+  const w = labels.width ?? Math.max(420, Math.floor(svgNode.clientWidth));
+  const h = labels.height ?? Math.max(170, Math.floor(svgNode.clientHeight));
   const margin = { top: 18, right: 18, bottom: 48, left: 48 };
   const innerW = w - margin.left - margin.right;
   const innerH = h - margin.top - margin.bottom;
@@ -7592,11 +7611,11 @@ function tailPFromCdf(stat, mode, cdfFn) {
   return clamp(2 * Math.min(cdfFn(stat), 1 - cdfFn(stat)), 0, 1);
 }
 
-function drawAct7TailChart(svgNode, { pdfFn, domain = [-4, 4], stat = 0, mode = "two", statColor = "#d55e00" }) {
+function drawAct7TailChart(svgNode, { pdfFn, domain = [-4, 4], stat = 0, mode = "two", statColor = "#d55e00", width = null, height = null }) {
   if (!svgNode || !window.d3) return;
   const d3 = window.d3;
-  const w = Math.max(420, Math.floor(svgNode.clientWidth));
-  const h = Math.max(170, Math.floor(svgNode.clientHeight));
+  const w = width ?? Math.max(420, Math.floor(svgNode.clientWidth));
+  const h = height ?? Math.max(170, Math.floor(svgNode.clientHeight));
   const margin = { top: 18, right: 18, bottom: 38, left: 34 };
   const innerW = w - margin.left - margin.right;
   const innerH = h - margin.top - margin.bottom;

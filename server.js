@@ -319,7 +319,7 @@ async function serveStatic(req, res, pathname) {
     res.writeHead(200, {
       "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
       "Content-Length": content.length,
-      "Cache-Control": ext === ".html" ? "no-store" : "public, max-age=60",
+      "Cache-Control": [".html", ".js", ".css"].includes(ext) ? "no-store" : "public, max-age=60",
     });
     res.end(content);
   } catch (err) {
