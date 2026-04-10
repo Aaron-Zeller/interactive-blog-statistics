@@ -382,4 +382,4 @@ In other words, it is both:
 
 ## License
 
-This repository includes a [`LICENSE`](/Users/aaronzeller/Documents/FS26/Design%20in%20Educational%20Technology/Interactive%20Blog/interactive-blog-statistics/LICENSE) file. See that file for the full license text.
+This repository includes a [`LICENSE`](LICENSE) file. See that file for the full license text.
