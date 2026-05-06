@@ -2600,9 +2600,14 @@ function getAssessmentCorrectValue(questionId) {
   }
 }
 
+function shouldRevealAssessmentAnswers(phase) {
+  if (!assessmentState.submitted.post) return false;
+  return phase === "pre" || phase === "post";
+}
+
 function syncAssessmentOptionButtons(phase, questionId, choice) {
   const buttons = document.querySelectorAll(`#${phase}-${questionId}-options .assessment-option`);
-  const revealCorrect = phase === "post" && assessmentState.submitted.post;
+  const revealCorrect = shouldRevealAssessmentAnswers(phase);
   const correctValue = getAssessmentCorrectValue(questionId);
   const choiceIsCorrect = Boolean(correctValue && choice === correctValue);
   const highlightedValue = revealCorrect && correctValue && !choiceIsCorrect ? correctValue : choice;
@@ -2749,9 +2754,11 @@ function updateAssessmentSummary(phase) {
   }
 
   if (phase === "pre") {
-    summaryNode.textContent = assessmentState.restoredFromSavedRecord.pre
-      ? "A saved pre-assessment was found, so the story is already unlocked."
-      : "Responses recorded. The answers stay hidden for now, and the story continues below.";
+    if (assessmentState.submitted.post) {
+      summaryNode.textContent = `Pre-assessment score: ${score}/${ASSESSMENT_QUESTIONS.length}. Answers and explanations are now unlocked so you can compare your first pass with the final one.`;
+      return;
+    }
+    summaryNode.textContent = "Responses recorded. The answers stay hidden for now, and the story continues below.";
     return;
   }
 
@@ -2812,9 +2819,7 @@ function updateBlogFeedbackSummary() {
   els.blogFeedbackSummary.classList.remove("success", "error");
 
   if (feedbackState.submitted) {
-    els.blogFeedbackSummary.textContent = feedbackState.restoredFromSavedRecord
-      ? "A saved feedback response was found. Thank you."
-      : "Thanks. Your optional feedback has been recorded.";
+    els.blogFeedbackSummary.textContent = "Thanks. Your optional feedback has been recorded for this session.";
     els.blogFeedbackSummary.classList.add("success");
     return;
   }
@@ -2863,7 +2868,7 @@ function renderBlogFeedback() {
 }
 
 async function submitBlogFeedback() {
-  if (feedbackState.submitted || !assessmentState.userId || typeof fetch !== "function") return;
+  if (feedbackState.submitted) return;
   const answeredCount = BLOG_FEEDBACK_QUESTIONS.filter((question) => Number.isFinite(Number(feedbackState.responses[question.id]))).length;
   if (answeredCount === 0) {
     if (els.blogFeedbackSummary) {
@@ -2876,57 +2881,23 @@ async function submitBlogFeedback() {
   feedbackState.saveStatus = "saving";
   updateBlogFeedbackSummary();
 
-  try {
-    const response = await fetch("/api/feedback", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId: assessmentState.userId,
-        responses: BLOG_FEEDBACK_QUESTIONS.reduce((acc, question) => {
-          const value = Number(feedbackState.responses[question.id]);
-          if (Number.isFinite(value) && value >= 1 && value <= 5) acc[question.id] = value;
-          return acc;
-        }, {}),
-      }),
-    });
+  feedbackState.submitted = true;
+  feedbackState.saveStatus = "saved";
+  feedbackState.restoredFromSavedRecord = false;
+  syncBlogFeedbackButtons();
+  setBlogFeedbackDisabled(true);
+  updateBlogFeedbackSummary();
 
-    if (response.status === 409) {
-      feedbackState.submitted = true;
-      feedbackState.saveStatus = "saved";
-      feedbackState.restoredFromSavedRecord = true;
-    } else {
-      if (!response.ok) throw new Error(`Feedback save failed with status ${response.status}`);
-      feedbackState.submitted = true;
-      feedbackState.saveStatus = "saved";
-      const payload = await response.json();
-      if (payload.record && payload.record.feedbackResponses) {
-        feedbackState.responses = {
-          ...cloneFeedbackDefaults(),
-          ...payload.record.feedbackResponses,
-        };
-      }
-    }
-
-    syncBlogFeedbackButtons();
-    setBlogFeedbackDisabled(true);
-    updateBlogFeedbackSummary();
-
-    const feedbackIndex = getGuidedSections().findIndex((section) => section.id === "blogFeedbackPanel");
-    if (feedbackIndex >= 0) {
-      setActiveGuidedStage(feedbackIndex + 1, { behavior: "smooth" });
-    }
-  } catch (err) {
-    feedbackState.saveStatus = "error";
-    updateBlogFeedbackSummary();
+  const feedbackIndex = getGuidedSections().findIndex((section) => section.id === "blogFeedbackPanel");
+  if (feedbackIndex >= 0) {
+    setActiveGuidedStage(feedbackIndex + 1, { behavior: "smooth" });
   }
 }
 
 function updatePreUnlockState() {
   const unlocked = assessmentState.submitted.pre;
   if (els.preAssessmentPanel) {
-    els.preAssessmentPanel.hidden = unlocked;
+    els.preAssessmentPanel.hidden = unlocked && !assessmentState.submitted.post;
   }
   if (els.guidedCourseProgress) {
     els.guidedCourseProgress.hidden = !unlocked;
@@ -3056,9 +3027,6 @@ function renderAssessmentPhase(phase) {
 }
 
 async function submitAssessmentScore(phase, correctness = null) {
-  if (!assessmentState.userId || typeof fetch !== "function") {
-    return { ok: false, status: "error" };
-  }
   const score = assessmentState.scores[phase];
   if (!Number.isFinite(score)) {
     return { ok: false, status: "error" };
@@ -3066,34 +3034,10 @@ async function submitAssessmentScore(phase, correctness = null) {
 
   assessmentState.saveStatus[phase] = "saving";
   updateAssessmentSummary(phase);
-
-  try {
-    const response = await fetch("/api/assessment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId: assessmentState.userId,
-        phase,
-        score,
-        total: ASSESSMENT_QUESTIONS.length,
-        correctness: Array.isArray(correctness) ? correctness : null,
-      }),
-    });
-
-    if (response.status === 409) {
-      assessmentState.saveStatus[phase] = "already";
-      return { ok: false, status: "already" };
-    }
-    if (!response.ok) throw new Error(`Save failed with status ${response.status}`);
-    const payload = await response.json();
-    assessmentState.saveStatus[phase] = "saved";
-    return { ok: true, status: "saved", record: payload.record || null };
-  } catch (err) {
-    assessmentState.saveStatus[phase] = "error";
-    return { ok: false, status: "error" };
-  }
+  void correctness;
+  assessmentState.saveStatus[phase] = "saved";
+  updateAssessmentSummary(phase);
+  return { ok: true, status: "saved", record: null };
 }
 
 function gradeAssessmentPhase(phase, revealAnswers) {
@@ -3123,7 +3067,6 @@ async function submitAssessmentPhase(phase) {
 
   assessmentState.saveStatus[phase] = "idle";
   updateAssessmentSummary(phase);
-  const shouldReveal = phase === "post";
   const graded = gradeAssessmentPhase(phase, false);
 
   updateAssessmentSummary(phase);
@@ -3143,14 +3086,16 @@ async function submitAssessmentPhase(phase) {
   }
 
   assessmentState.submitted[phase] = true;
-  if (shouldReveal) {
-    gradeAssessmentPhase(phase, true);
-  }
   setAssessmentPhaseDisabled(phase, true);
   if (phase === "pre") {
     updatePreUnlockState();
     setActiveGuidedStage(getStoredAssessmentStageIndex(), { behavior: "smooth" });
   } else {
+    renderAssessmentPhase("pre");
+    gradeAssessmentPhase("pre", true);
+    renderAssessmentPhase("post");
+    gradeAssessmentPhase("post", true);
+    updatePreUnlockState();
     ensureGuidedStageChrome();
     const feedbackIndex = getGuidedSections().findIndex((section) => section.id === "blogFeedbackPanel");
     setActiveGuidedStage(feedbackIndex >= 0 ? feedbackIndex : getGuidedSections().length - 1, { behavior: "smooth" });
@@ -3159,47 +3104,23 @@ async function submitAssessmentPhase(phase) {
 }
 
 async function loadExistingAssessmentRecord() {
-  if (!assessmentState.userId || typeof fetch !== "function") return;
-  try {
-    const response = await fetch(`/api/assessment?userId=${encodeURIComponent(assessmentState.userId)}`, {
-      cache: "no-store",
-    });
-    if (!response.ok) return;
-    const payload = await response.json();
-    const record = payload.record;
-    if (!record) return;
-    if (record.preSavedAt) {
-      assessmentState.submitted.pre = true;
-      assessmentState.scores.pre = Number.isFinite(record.preScore) ? record.preScore : null;
-      assessmentState.saveStatus.pre = "saved";
-      assessmentState.restoredFromSavedRecord.pre = true;
-    }
-    if (record.postSavedAt) {
-      assessmentState.submitted.post = true;
-      assessmentState.scores.post = Number.isFinite(record.postScore) ? record.postScore : null;
-      assessmentState.saveStatus.post = "saved";
-      assessmentState.restoredFromSavedRecord.post = true;
-    }
-    if (record.feedbackSavedAt) {
-      feedbackState.submitted = true;
-      feedbackState.saveStatus = "saved";
-      feedbackState.restoredFromSavedRecord = true;
-      feedbackState.responses = {
-        ...cloneFeedbackDefaults(),
-        ...(record.feedbackResponses && typeof record.feedbackResponses === "object" ? record.feedbackResponses : {}),
-      };
-    }
-  } catch (err) {
-    // Leave the assessment usable even if the saved record cannot be loaded.
-  }
+  return;
 }
 
 async function initAssessments() {
   if (!els.preAssessmentGrid && !els.postAssessmentGrid) return;
 
-  assessmentState.userId = getOrCreateAssessmentUserId();
+  assessmentState.userId = "";
   assessmentState.pre = cloneAssessmentDefaults();
   assessmentState.post = cloneAssessmentDefaults();
+  assessmentState.scores.pre = null;
+  assessmentState.scores.post = null;
+  assessmentState.saveStatus.pre = "idle";
+  assessmentState.saveStatus.post = "idle";
+  assessmentState.submitted.pre = false;
+  assessmentState.submitted.post = false;
+  assessmentState.restoredFromSavedRecord.pre = false;
+  assessmentState.restoredFromSavedRecord.post = false;
   feedbackState.responses = cloneFeedbackDefaults();
   feedbackState.submitted = false;
   feedbackState.saveStatus = "idle";
@@ -3207,6 +3128,7 @@ async function initAssessments() {
   assessmentUiState.pre = cloneAssessmentUiDefaults();
   assessmentUiState.post = cloneAssessmentUiDefaults();
   ensureAssessmentScrollBinding();
+  setStoredAssessmentStageIndex(0);
   await loadExistingAssessmentRecord();
   renderAssessmentPhase("pre");
   renderBlogFeedback();
